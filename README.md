@@ -1,78 +1,169 @@
-# BPI regulatory-data MVP
+# BPI regulatory-data research pipeline
 
-**Historical panel:** see [PANEL_STATUS.md](PANEL_STATUS.md) for the twelve-quarter 2023–2025 research draft, full bank coverage ledger, ownership audit and outstanding merger work.
+Python tools for preparing public US holding-company and bank regulatory data for stress-test research, using DuckDB, Parquet and CSV. This is a research prototype developed for the BPI use case; it does not imply BPI affiliation or approval.
 
-**Updated implementation:** see [UPGRADE_STATUS.md](UPGRADE_STATUS.md) for v2 behaviour and reproduction commands. Outputs now include detailed deposit aggregation, a wide table, stricter input checks and explicit review status. Blank-holder banks are candidates pending independent verification; source-specific loan definitions use separate columns.
+**Status: REVIEW_REQUIRED.** A draft covers all 12 quarters of 2023–2025. Full-population financial checks have unresolved failures. Complete merger-adjusted histories have **not** been produced. Passing software tests does not certify the financial dataset.
 
-This is a deliberately small, reproducible prototype for preparing public US bank regulatory data for stress-test research. It combines consolidated holding-company FR Y-9C data with bank-level Call Report data, creates CSV/Parquet/DuckDB outputs, converts cumulative income to a true single-quarter flow, and prevents double counting between a BHC and its insured-bank subsidiaries.
+## Current delivery
 
-## What works now
+The last completed local run retained:
 
-- One verified end-to-end target quarter: **2024-12-31**, with **2024-09-30** as the required prior quarter.
-- Five consolidated BHCs chosen from valid FR Y-9C filers that have same-quarter FDIC ownership matches.
-- Three large standalone insured banks with complete selected measures, selected only where the same-quarter `RSSDHCR` is blank/zero or self-referential.
-- Assets, loans, deposits, total equity, YTD net income and single-quarter net income.
-- Period-aware ownership links using FDIC's quarter-end `RSSDHCR` and `NAMEHCR` fields.
-- Source-file hashes, field-level source variables, validation results, CSV, Parquet and DuckDB.
+| Result | Observations |
+|---|---:|
+| FDIC bank-quarter records in the raw-bank table | 55,090 |
+| Organisation-quarter rows after the NIC ownership review filter | 13,662 |
+| Duplicate organisation-quarter keys in that table | 0 |
+| FDIC holder observations corroborated in NIC control chains | 45,649 |
+| Blank-holder observations with a NIC control parent | 326 |
+| FDIC/NIC holder disagreements | 37 |
+| Missing financial measure values in the pre-review measures table | 1,618 |
+| Negative stock values flagged in that measures table | 30 |
+| NIC transformation records dated within 2023–2025 | 1,350 |
 
-## Official source formats verified
+These are results from the saved local source snapshot, not guarantees for a fresh download. Regulatory amendments and source refreshes can change them. Negative equity can be a valid filing value.
 
-1. **NIC / FR Y-9C holding-company download.** The NIC page says quarterly ZIPs contain caret-delimited text, one row per institution, and mix FR Y-9C, Y-9LP and Y-9SP variables. The pipeline includes only rows with populated `BHCK2170`, an observable FR Y-9C field. Official page: <https://www.ffiec.gov/npw/FinancialReport/FinancialDataDownload>
-2. **FDIC BankFind Suite API.** `/banks/financials` returns JSON or CSV without a paid API. This MVP requests documented financial and identifier fields and retains the raw JSON response. Documentation: <https://api.fdic.gov/banks/docs/>
-3. **Measure definitions.** The mappings are recorded in `config/measure_map.csv`. Federal Reserve MDRM confirms, among others, `BHCK2170` total assets, `BHCK2122` total loans and leases net of unearned income, `BHCK3210` total equity capital and `BHCK4340` net income. FR Y-9C deposits are the sum of domestic and foreign, noninterest- and interest-bearing components. FDIC `LNLSNET` is retained under the common research label `total_loans`, but its source-specific definition remains visible in the mapping and provenance rather than being claimed as perfectly identical to `BHCK2122`.
+**GitHub contains the code, documentation, tests and illustrative workflow images. Downloaded source files, generated datasets, DuckDB databases and the Python environment are excluded.** Repository links cannot provide the locally generated CSV files.
 
-All monetary values are **USD thousands**, matching the regulatory sources.
+## Workflow
 
-## Reproduce
+1. Read each quarter's official NIC holding-company ZIP and obtain FDIC financials.
+2. Identify Y-9C observations through populated `BHCK2170`; validate source dates, record identifiers and FDIC response completeness.
+3. Retain all observed Y-9C filers in panel mode. Match banks to holders using the same quarter's FDIC `RSSDHCR`.
+4. Use consolidated Y-9C financials for those holders. Keep subsidiary banks in the ownership and raw-bank tables rather than adding their core balances again.
+5. Aggregate selected bank deposit categories separately, preserving contributor counts, missingness and differences from consolidated deposits.
+6. Convert YTD income to quarterly income, run checks and export quarterly tables.
+7. Combine quarters, audit ownership against dated NIC control chains and generate the reviewed organisation table plus exception reports.
+8. Record NIC transformation events and flag potentially affected quarters for merger research.
 
-The NIC site may challenge scripted downloads, so download these two files from the official page and place them in `research/`:
+The workflow images describe the proposed full system, including merger adjustments that remain unimplemented.
 
-- `BHCF20241231.ZIP`
-- `BHCF20240930.ZIP`
+## Coverage and ownership rules
 
-Then, from this directory in PowerShell:
+The NIC files mix Y-9C, Y-9LP and Y-9SP fields. The current filter uses populated Y-9C assets; it does not independently classify each filer as a BHC, SLHC or IHC. The internal label `consolidated_BHC` should therefore be read as a holding-company filing label.
+
+A bank with a blank, zero or self-referential FDIC holder initially becomes a `standalone_candidate_bank`. The reviewed table retains that bank only if the dated NIC direct-control graph yields no control ancestor. Absence of a NIC edge is not independent proof of standalone status or comprehensive source coverage. Historical institution-type screening, including foreign branches, remains outstanding.
+
+The full run also retains **40,430 bank-quarter records whose reported holder has no selected Y-9C row**. They remain in `bank_raw` and the coverage ledger, but are not included as standalone banks in the main organisation table. Small holders outside Y-9C scope are one possible explanation; this has not been established for every record. Bank-only aggregates for those groups are not yet implemented.
+
+Consequently, the main table is **not yet a complete analytical population of every bank and savings institution**. Its duplicate-key check also does not establish that every possible ownership or consolidation overlap has been resolved.
+
+## Measures and definitions
+
+All monetary values are **USD thousands**. Stocks are quarter-end balances.
+
+| Output | Holding-company source | Bank source / treatment |
+|---|---|---|
+| `total_assets` | `BHCK2170` | `ASSET` |
+| `total_loans` | `BHCK2122`: loans and leases net of unearned income | Not populated from FDIC net loans |
+| `loans_net_allowances` | Not populated from the BHC loan field | `LNLSNET`: separate source-specific measure |
+| `total_equity` | `BHCK3210` | `EQ`; reporting perimeter requires review |
+| `total_deposits` | Sum of `BHDM6631`, `BHDM6636`, `BHFN6631`, `BHFN6636` | `DEP` |
+| `net_income_ytd` | `BHCK4340` | `NETINC` |
+| `net_income_quarter` | Q1: YTD directly; Q2–Q4: current YTD minus adjacent prior-quarter YTD | `NETINCQ`, cross-checked against the YTD calculation |
+
+Missing BHC deposit components produce a missing total. A missing prior income value produces missing quarterly income. The program checks adjacent calendar quarters; it does not automatically repair amendments, perimeter changes or merger-quarter income.
+
+The deposit table separately aggregates `DEP`, `DEPDOM`, `DEPFOR`, `DEPIDOM` and `DEPNIDOM`: total, domestic, foreign, domestic interest-bearing and domestic noninterest-bearing deposits. A missing contributor value is not silently converted to zero. Domestic interest-bearing plus noninterest-bearing deposits are checked against domestic deposits.
+
+Subsidiary sums cover the matched FDIC reporting banks. They can differ from consolidated Y-9C deposits because of reporting scope and consolidation effects. The difference is exported, not forced to zero. Deposit categories such as demand, savings and time deposits shown in illustrative examples are not all implemented.
+
+See [config/measure_map.csv](config/measure_map.csv). It documents the mappings; Python currently implements them directly, so both must remain aligned.
+
+## Official sources
+
+- [NIC holding-company financial downloads](https://www.ffiec.gov/npw/FinancialReport/FinancialDataDownload): quarterly ZIPs containing caret-delimited TXT files.
+- [FDIC BankFind API documentation](https://api.fdic.gov/banks/docs/): bank financials and identifiers from the public `/banks/financials` endpoint.
+- [NIC structure downloads](https://www.ffiec.gov/npw/FinancialReport/DataDownload/1000): relationships and transformations.
+- [NIC structure dictionary](https://www.ffiec.gov/npw/StaticData/DataDownload/NPW%20Data%20Dictionary.pdf) and [Federal Reserve MDRM](https://www.federalreserve.gov/data/mdrm.htm): source definitions.
+
+The bank pipeline uses FDIC's selected financial fields; it does **not** parse raw FFIEC CDR schedule files. It requires no paid API. Current NIC publications contain dated history but are not vintage archives.
+
+## Setup and reproduce
+
+The commands below run from the **cloned repository root**, using Python 3.12 and PowerShell.
 
 ```powershell
+git clone https://github.com/hugozacm/bpi-regulatory-data.git
+cd bpi-regulatory-data
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe src\bpi_pipeline.py `
-  --period 20241231 `
-  --prior-period 20240930 `
-  --y9-current research\BHCF20241231.ZIP `
-  --y9-prior research\BHCF20240930.ZIP `
-  --output outputs\20241231
-.\.venv\Scripts\python.exe -m pytest -q
+New-Item -ItemType Directory -Force research | Out-Null
 ```
 
-For a fully offline rerun, add `--fdic-current research\fdic_20241231.json --fdic-prior research\fdic_20240930.json`.
+Private-repository Git authentication is required to clone.
 
-## Stock versus flow logic
+### Prepare the source files
 
-- Assets, loans, deposits and equity are quarter-end **stocks** and are used directly.
-- FR Y-9C `BHCK4340` is a calendar-year-to-date **flow**. For Q2-Q4, the pipeline subtracts the preceding quarter's YTD value; Q1 is used directly. If the prior filing is missing, the quarterly value remains null rather than being guessed.
-- FDIC `NETINC` is kept as YTD and documented `NETINCQ` is used for the quarter. The validation report checks `NETINCQ == current NETINC - prior NETINC` for the selected standalone banks.
+Use the official NIC pages above to download and place the following in `research/`:
 
-## No-double-counting rule
+- `BHCF20230331.ZIP`, `BHCF20230630.ZIP`, `BHCF20230930.ZIP`, `BHCF20231231.ZIP`
+- `BHCF20240331.ZIP`, `BHCF20240630.ZIP`, `BHCF20240930.ZIP`, `BHCF20241231.ZIP`
+- `BHCF20250331.ZIP`, `BHCF20250630.ZIP`, `BHCF20250930.ZIP`, `BHCF20251231.ZIP`
+- `CSV_RELATIONSHIPS.zip` and `CSV_TRANSFORMATIONS.zip` from the **CSV** structure download section.
 
-The analytical entity table contains consolidated BHC rows and truly standalone bank rows. Banks whose same-quarter `RSSDHCR` matches a selected BHC are written to `ownership.csv` for traceability but are deliberately excluded as separate analytical entities. This avoids adding consolidated BHC assets to subsidiary-bank assets.
+Do not unzip them. NIC may require an ordinary browser download when its scripted endpoint displays a challenge.
 
-## Outputs
+The panel builder downloads missing FDIC responses as `research/fdic_extended_YYYYMMDD.json`. To rerun offline, supply all twelve previously saved responses with those names. Q1 income uses current-year YTD directly, so no 2022 financial input is required for this panel.
 
-- `institutions.*`: analytical entities and identifiers.
-- `measures.*`: tidy measures with source variable and stock/flow status.
-- `ownership.*`: subsidiary-bank-to-top-holder matches for the report date.
-- `validation.*`: executable QA checks.
-- `provenance.*`: official URLs, local input names and SHA-256 hashes.
-- `bpi_mvp.duckdb`: the same five tables in DuckDB.
-- `run_summary.json`: concise machine-readable run result.
+### Build and review the panel
 
-## Limitations and next steps
+```powershell
+.\.venv\Scripts\python.exe src\build_panel.py
+.\.venv\Scripts\python.exe src\review_panel.py
+```
 
-- This is one quarter, not yet the requested 2023-2025 panel. The code accepts other adjacent quarter pairs, but historical field continuity needs a period-by-period mapping review before claiming coverage.
-- `RSSDHCR` is a quarter-end regulatory high-holder field. It is period-aware for the chosen quarter but is not a full ownership graph, ownership percentage, or legal-control history.
-- The output does not sum bank subsidiaries into a BHC; it relies on the already consolidated FR Y-9C. It also does not reconcile every nonbank subsidiary or intercompany elimination.
-- No merger adjustment is claimed. The current NIC bulk structure download contains ownership history and transformations, but this MVP does not yet ingest a dated historical snapshot sufficient to reconstruct pre-merger comparables.
-- The sample selection is mechanical (largest eligible entities), not a statement about BPI membership or stress-test coverage.
-- Regulatory filings can be amended. Re-running may change values; provenance hashes make that visible.
+The builder regenerates the output files in `outputs/panel_2023_2025/`. Save a separate snapshot beforehand if you need to preserve an earlier run.
 
-Next: extend the date loop to 2023-2025, add versioned period-valid measure mappings, ingest NIC relationship/transformation history, and add amendment-aware snapshots before any merger-adjusted research series is published.
+The builder retains quarterly validation failures in its reports and continues assembling the draft. It does **not** turn a completed run into a publication approval. The single-quarter CLI returns exit code 2 on failed financial checks; the panel builder calls its Python function and retains those failure results. Review `validation.csv`, `review_summary.json` and the exception tables before analysis.
+
+### Run tests
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q --basetemp test_temp_verify
+```
+
+The last local run passed 15 tests. A fresh clone normally runs 14 and skips the optional real-data integration test because downloaded fixtures are excluded. That test also expects the original `research/fdic_20240930.json` filename alongside the extended Q4 response. Source downloads can be amended, so fixture-dependent checks may change.
+
+Tests cover income conversion, input dates and uniqueness, missingness, precise integer handling, truncated API responses, caret parsing, dated ownership paths and conservative merger-event classification. They are not independent certification of the complete historical financial dataset.
+
+## Output tables
+
+Each listed table is exported to CSV and Parquet and stored in `panel.duckdb`.
+
+| Table | Purpose |
+|---|---|
+| `organisation_financials` | Main reviewed draft: one row per organisation and quarter, core measures and separately labelled bank deposit aggregates |
+| `bank_raw` | All downloaded bank financial records, including banks outside the main analytical table |
+| `institutions`, `measures`, `financials_wide` | Intermediate entity and financial tables before the final NIC ownership filter |
+| `deposits` | Deposit sums, contributor counts, missingness and differences from core reported deposits |
+| `ownership` | FDIC bank-to-Y-9C-holder links |
+| `bank_coverage` | Original FDIC-based bank inclusion classification |
+| `ownership_audit` | Dated NIC control-chain corroboration and disagreements |
+| `validation` | Quarterly mechanical check results; not all pass for the full population |
+| `value_exceptions` | Missing measures and negative stock values from the intermediate measures table |
+| `merger_events` | Verified source event records and review classifications |
+| `merger_quarter_review` | Holding-company observations potentially affected by transformation events |
+| `provenance` | Source URLs, file hashes, processing times and FDIC request parameters |
+
+Quarter-specific subfolders also retain their own outputs and `run_summary.json`. The panel folder contains `quarter_summary.json`, `review_summary.json` and a review-required marker. For candidate banks, columns prefixed `bank_subsidiary_` contain the bank's own deposit values; the prefix does not assert that it has subsidiaries.
+
+`processed_at_utc` records processing, not the original download time. Exact reproduction requires the same raw source snapshots; the repository alone does not include them.
+
+## Merger adjustment and remaining work
+
+**No merger-adjusted financial history is currently exported.** The code ingests and classifies transformation records and flags quarters for review. The provisional reference date is 31 December 2025.
+
+A charter-discontinuation code alone does not establish a simple one-buyer, full-entity transfer. Purchase accounting, multiple successors, partial acquisitions, failures and the distinction between legal transformation and economic consolidation dates require verification. Summing predecessors without these checks can double count balances or misstate flows.
+
+Before research release:
+
+- Resolve population coverage, historical institution types and bank-only groups without Y-9C coverage.
+- Investigate ownership disagreements and reconcile selected values to official filings.
+- Align loan, equity and income definitions and document deposit consolidation treatment.
+- Assess missing prior filings, restatements and merger-quarter flow comparability.
+- Implement and validate a documented merger-adjustment method and predecessor lineage.
+- Extend earlier than 2023 only after verifying historical source and mapping continuity.
+
+[Detailed panel status](PANEL_STATUS.md) · [Provisional assumptions and questions](PROVISIONAL_ASSUMPTIONS.md)
+
+[UPGRADE_STATUS.md](UPGRADE_STATUS.md) and [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) describe earlier implementation stages. Read this README and the panel status for current behaviour.
