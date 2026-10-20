@@ -35,7 +35,7 @@ These are results from the saved local source snapshot, not guarantees for a fre
 7. Combine quarters, audit ownership against dated NIC control chains and generate the reviewed organisation table plus exception reports.
 8. Record NIC transformation events and flag potentially affected quarters for merger research.
 
-The workflow images describe the proposed full system, including merger adjustments that remain unimplemented.
+The workflow images distinguish the implemented draft from planned merger adjustments. The output-table image uses illustrative figures, not source observations.
 
 ## Coverage and ownership rules
 
@@ -65,7 +65,7 @@ Missing BHC deposit components produce a missing total. A missing prior income v
 
 The deposit table separately aggregates `DEP`, `DEPDOM`, `DEPFOR`, `DEPIDOM` and `DEPNIDOM`: total, domestic, foreign, domestic interest-bearing and domestic noninterest-bearing deposits. A missing contributor value is not silently converted to zero. Domestic interest-bearing plus noninterest-bearing deposits are checked against domestic deposits.
 
-Subsidiary sums cover the matched FDIC reporting banks. They can differ from consolidated Y-9C deposits because of reporting scope and consolidation effects. The difference is exported, not forced to zero. Deposit categories such as demand, savings and time deposits shown in illustrative examples are not all implemented.
+Subsidiary sums cover the matched FDIC reporting banks. They can differ from consolidated Y-9C deposits because of reporting scope and consolidation effects. The difference is exported, not forced to zero. Additional categories such as demand, savings and time deposits are not implemented.
 
 See [config/measure_map.csv](config/measure_map.csv). It documents the mappings; Python currently implements them directly, so both must remain aligned.
 
@@ -164,6 +164,6 @@ Before research release:
 - Implement and validate a documented merger-adjustment method and predecessor lineage.
 - Extend earlier than 2023 only after verifying historical source and mapping continuity.
 
-[Detailed panel status](PANEL_STATUS.md) · [Provisional assumptions and questions](PROVISIONAL_ASSUMPTIONS.md)
+[Detailed panel status](PANEL_STATUS.md) · [Provisional assumptions](PROVISIONAL_ASSUMPTIONS.md) · [Stakeholder review questions](REVIEW_QUESTIONS.md)
 
-[UPGRADE_STATUS.md](UPGRADE_STATUS.md) and [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) describe earlier implementation stages. Read this README and the panel status for current behaviour.
+[Current architecture](ARCHITECTURE_REVIEW.md) describes the implemented workflow. [Implementation history](UPGRADE_STATUS.md) records earlier stages. To regenerate the illustrative PNGs, install the optional Pillow package and run `build_workflow_images.py`; this is not required to run the data pipeline.

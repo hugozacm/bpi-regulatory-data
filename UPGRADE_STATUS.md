@@ -1,32 +1,28 @@
-# Current-quarter upgrade
+# Implementation history
 
-The v2 output is a diagnostic research draft. See `outputs/20241231_v2/`.
+This is a historical change log. [README.md](README.md), [PANEL_STATUS.md](PANEL_STATUS.md) and [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) describe current behaviour.
 
-Implemented:
+## Stage 1 — small-quarter proof of concept
 
-- Validate calendar quarter ends and adjacent input periods before processing.
-- Validate raw source dates, missing/duplicate identifiers and FDIC downloaded count against `meta.total` before joins.
-- Preserve integral values without float precision loss; reject fractional input amounts/IDs.
-- Require all BHC deposit components; missing components no longer become zero.
-- Label banks with blank/self holders as `standalone_candidate_bank`, pending independent ownership evidence.
-- Separate FDIC loans net of allowances (`loans_net_allowances`) from BHC `total_loans` net of unearned income. They are deliberately separate columns until a common definition is verified.
-- Aggregate documented FDIC `DEPDOM`, `DEPFOR`, `DEPIDOM`, `DEPNIDOM` across same-quarter subsidiary banks. Preserve contributor counts and missing-field counts. These are stock measures in USD thousands.
-- Keep subsidiary-bank deposit sums separate from consolidated Y-9C totals. Record their difference for investigation; do not force equality or invent consolidation eliminations.
-- Reconcile domestic deposit components and require bank income cross-check coverage for every selected candidate.
-- Export `financials_wide.csv` and Parquet, one row per entity-quarter, plus a separate deposit table and supporting evidence.
-- Preserve full FDIC request parameters and file hashes; rename the timestamp to `processed_at_utc` because the original retrieval time is unknown.
-- Return CLI exit code 2 for failed financial checks. All outputs carry a `REVIEW_REQUIRED` marker; successful mechanical checks do not authorise publication.
-- `--all-bhcs` supports all observed Y-9C filers for this input quarter. This option is not a claim of complete bank/savings-institution population or historical coverage.
+Started with a small holding-company and bank sample to verify official source parsing, selected financial mappings, stock versus YTD income conversion, ownership links and CSV/Parquet/DuckDB outputs. Earlier sample counts do not describe the current population.
 
-## Offline reproduction from the workspace root
+## Stage 2 — stronger quarterly controls
 
-```powershell
-.\bpi_regulatory_mvp\.venv\Scripts\python.exe .\bpi_regulatory_mvp\src\bpi_pipeline.py --y9-current .\bpi_regulatory_mvp\research\BHCF20241231.ZIP --y9-prior .\bpi_regulatory_mvp\research\BHCF20240930.ZIP --fdic-current .\bpi_regulatory_mvp\research\fdic_extended_20241231.json --fdic-prior .\bpi_regulatory_mvp\research\fdic_20240930.json --output .\bpi_regulatory_mvp\outputs\20241231_v2
-.\bpi_regulatory_mvp\.venv\Scripts\python.exe -m pytest -q .\bpi_regulatory_mvp\tests --basetemp .\bpi_regulatory_mvp\test_temp
-```
+Added precise integer parsing, raw filing date and identifier checks, FDIC response completeness checks, adjacent-quarter validation, strict missingness, separate loan definitions and deposit contributor/perimeter diagnostics. Core balances of matched subsidiaries are not added to consolidated holder financials.
 
-## Remaining work
+## Stage 3 — 2023–2025 draft panel
 
-Independent standalone verification, loan/equity/income definition reconciliation, reference-filing reconciliation, approved deposit consolidation treatment, complete bank/savings coverage, 2023–2025 iteration and verified merger history remain outstanding. Deposit fields here use FDIC's official financials API; direct CDR schedule parsing is not yet implemented. Foreign deposits left blank by a domestic bank remain null, not fabricated zero.
+Implemented all 12 quarters, all observed Y-9C filers and bank candidates. The saved source snapshot yields 55,090 raw bank-quarter rows and 13,662 final organisation-quarter rows.
 
-The original README and architecture review describe the first prototype; this status note takes precedence for v2 behaviour.
+Added dated NIC control-chain ownership review, raw-bank and coverage tables, exception exports, transformation-event classification and potentially affected-quarter review flags.
+
+## Still outstanding
+
+- Complete institution-type screening and coverage of holder groups without Y-9C observations.
+- Independent reference-filing reconciliation and resolution of material ownership/value exceptions.
+- Agreed comparable financial/deposit definitions and restatement handling.
+- Verified merger lineage and actual merger-adjusted financial histories.
+- Earlier history after source/mapping continuity checks.
+- A publication release gate; current exports remain REVIEW_REQUIRED.
+
+The workflow and table images now distinguish implemented outputs from planned merger adjustment. Source files and generated financial datasets are excluded from GitHub. See [stakeholder questions](REVIEW_QUESTIONS.md) before approving methodology.

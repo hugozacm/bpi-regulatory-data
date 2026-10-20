@@ -44,12 +44,14 @@ No complete merger-adjusted panel is claimed. The verified NIC transformation co
 
 Official definitions: https://www.ffiec.gov/npw/StaticData/DataDownload/NPW%20Data%20Dictionary.pdf
 
-## Reproduce from the workspace root
+## Reproduce from the cloned repository root
+
+First complete the environment and source-file setup in [README.md](README.md).
 
 ```powershell
-.\bpi_regulatory_mvp\.venv\Scripts\python.exe .\bpi_regulatory_mvp\src\build_panel.py
-.\bpi_regulatory_mvp\.venv\Scripts\python.exe .\bpi_regulatory_mvp\src\review_panel.py
-.\bpi_regulatory_mvp\.venv\Scripts\python.exe -m pytest -q .\bpi_regulatory_mvp\tests --basetemp .\bpi_regulatory_mvp\test_temp_verify
+.\.venv\Scripts\python.exe src\build_panel.py
+.\.venv\Scripts\python.exe src\review_panel.py
+.\.venv\Scripts\python.exe -m pytest -q --basetemp test_temp_verify
 ```
 
 The builder reuses local files, downloading absent FDIC quarters. Official NIC ZIPs must be present in `research/` because their scripted endpoints may show browser challenges. NIC relationship and transformation ZIPs are also required for review. The NIC ZIP hashes and FDIC request metadata are retained; original browser download timestamps are not reconstructed.
