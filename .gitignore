@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+data/raw/
+outputs/
+research/*.html
+research/*.xlsx
+research/*.yaml
+research/*.json
+research/*.ZIP
+research/*.zip
+test_temp*/

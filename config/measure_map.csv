@@ -1,0 +1,17 @@
+source,output_measure,source_variable,measurement_type,unit,transformation
+FR_Y9C,total_assets,BHCK2170,stock,USD_thousands,direct
+FR_Y9C,total_loans,BHCK2122,stock,USD_thousands,direct; net of unearned income
+FR_Y9C,total_deposits,BHDM6631+BHDM6636+BHFN6631+BHFN6636,stock,USD_thousands,sum components
+FR_Y9C,total_equity,BHCK3210,stock,USD_thousands,direct
+FR_Y9C,net_income_ytd,BHCK4340,YTD_flow,USD_thousands,direct
+FR_Y9C,net_income_quarter,BHCK4340,YTD_flow,USD_thousands,current YTD minus prior-quarter YTD; Q1 direct
+FDIC_CALL,total_assets,ASSET,stock,USD_thousands,direct
+FDIC_CALL,loans_net_allowances,LNLSNET,stock,USD_thousands,direct; separate from BHC loans net of unearned income
+FDIC_CALL,deposits_domestic,DEPDOM,stock,USD_thousands,sum across same-period member banks; retain missingness
+FDIC_CALL,deposits_foreign,DEPFOR,stock,USD_thousands,sum across same-period member banks; retain missingness
+FDIC_CALL,deposits_domestic_interest_bearing,DEPIDOM,stock,USD_thousands,sum across same-period member banks; retain missingness
+FDIC_CALL,deposits_domestic_noninterest_bearing,DEPNIDOM,stock,USD_thousands,sum across same-period member banks; retain missingness
+FDIC_CALL,total_deposits,DEP,stock,USD_thousands,direct
+FDIC_CALL,total_equity,EQ,stock,USD_thousands,direct
+FDIC_CALL,net_income_ytd,NETINC,YTD_flow,USD_thousands,direct
+FDIC_CALL,net_income_quarter,NETINCQ,quarter_flow,USD_thousands,direct
