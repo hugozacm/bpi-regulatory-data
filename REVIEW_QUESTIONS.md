@@ -11,6 +11,19 @@ Purpose: agree the population, definitions and acceptance rules before extending
 5. **How should merger-adjusted history be constructed?** Confirm or change the provisional 31 December 2025 reference. Which predecessors belong to each surviving group? How should partial acquisitions, failures, multiple successors, intercompany balances and acquisition-quarter income be handled?
 6. **What makes the dataset acceptable?** Which reference filings or existing dataset should we reconcile to? What tolerances and missingness are acceptable? Which ownership disagreements or other checks must block release, and who approves them?
 
+## Technical work planned for 21 October
+
+After the methodology discussion, start source-download automation:
+
+- Provide one command to download missing official sources, process available quarters and produce a validation/review report.
+- Keep the existing automated FDIC downloads; add NIC financial and structure downloads where the official endpoints permit them.
+- If NIC requires a browser challenge, report the manual step clearly; do not bypass it or silently continue with missing sources.
+- Preserve original source snapshots, record URLs, file hashes and actual retrieval times for new downloads, and avoid overwriting earlier snapshots.
+- Check download completeness and expected formats; report failed downloads explicitly.
+- Test with a small quarter first. Keep financial approval and merger-methodology decisions separate from successful automation.
+
+This is planned work, not an implemented feature or a scheduled automatic run.
+
 ## Bring to the meeting
 
 - [Current workflow PNG](review_images/workflow.png) and [illustrative output structure](review_images/output_tables_example.png).
