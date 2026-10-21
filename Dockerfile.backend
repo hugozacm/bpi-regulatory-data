@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt requirements-hosting.txt ./
+RUN pip install --no-cache-dir -r requirements-hosting.txt
+COPY src ./src
+COPY config ./config
+RUN mkdir -p /app/outputs /app/research && useradd --uid 10001 --create-home regdata && chown -R regdata:regdata /app
+USER regdata
+ENV PORT=8000
+# Exactly one worker is required by the single-process job coordinator.
+CMD ["sh", "-c", "exec gunicorn --chdir src --bind 0.0.0.0:${PORT} --workers 1 --threads 4 --timeout 120 --access-logfile - backend_api:application"]

@@ -1,5 +1,7 @@
 # Decisions and remaining working assumptions
 
+> Historical/pilot document: retained for audit, not the current implementation contract. Use [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md), [MVP_V1.md](MVP_V1.md), [HISTORICAL_EXTENSION.md](HISTORICAL_EXTENSION.md) and [REQUIREMENTS.md](REQUIREMENTS.md) for current scope. Any fixed December 2025 merger-reference proposal below is withdrawn; predecessors remain separate before official mergers.
+
 The authoritative target is now [REQUIREMENTS.md](REQUIREMENTS.md), based on Hugo's answers on 21 October 2026.
 
 ## Confirmed direction

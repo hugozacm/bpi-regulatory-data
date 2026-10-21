@@ -1,5 +1,7 @@
 # Integrated dataset delivery — 21 October 2026
 
+> **Current scope correction:** The MVP must cover the longest reliable historical period, not just 2023–2026. The existing package is an interim snapshot and does not complete the MVP. Historical acquisition, harmonisation and integration are required MVP work, not optional post-MVP backlog. Earlier statements describing the narrowed delivery as the finished MVP are superseded. See [config/delivery_scope.json](config/delivery_scope.json). Current status: **INCOMPLETE_HISTORICAL_MVP**.
+
 **Narrowed MVP delivery:** [MVP_V1.md](MVP_V1.md) packages this upstream build under subsequently agreed assumptions. It excludes/withholds specified uncertain data and preserves all audit evidence. The broader-target release status below is unchanged; MVP packaging does not turn an uncertified build into an approved full-history database.
 
 **This is a working integrated research build, not the requested final approved version.** Historical breadth, detailed bank equivalents and independent validation remain incomplete. A completed run returns exit 2 and BLOCKED_REVIEW_REQUIRED rather than silently claiming finality.

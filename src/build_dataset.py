@@ -18,6 +18,8 @@ from history_audit import active_control_parents, zip_rows
 from run_workflow import (STRUCTURE_FIELDS, fdic_params, prepare_source, previous_quarter,
                           session, utc_now, validate_source, failure_reason)
 from top_level import build_groups, resolve_top, strict_sum
+from release_mvp import apply_delivery_quality
+from output_dictionary import build_dictionary
 
 
 def quarters(start, end):
@@ -31,6 +33,22 @@ def quarters(start, end):
 
 def needed_periods(periods):
     return sorted(set(periods) | {previous_quarter(p) for p in periods if p[4:6] != '03'})
+
+
+def plan_period_delivery(periods, available, detailed):
+    """Never manufacture a missing quarter; prior gaps withhold flows, not stocks."""
+    result=[]
+    for q in periods:
+        if q not in available:
+            result.append({'report_date':q,'status':'MISSING','reason':'CURRENT_Y9C_OR_CALL_REPORT_SOURCE_UNAVAILABLE'})
+            continue
+        reasons=[]
+        if q[4:6]!='03' and previous_quarter(q) not in available:
+            reasons.append('PRIOR_QUARTER_UNAVAILABLE_QUARTERLY_FLOWS_WITHHELD')
+        if q not in detailed:reasons.append('DETAILED_BANK_SCHEDULE_UNAVAILABLE_CORE_ONLY')
+        result.append({'report_date':q,'status':'DELIVERED_WITH_LIMITATIONS' if reasons else 'DELIVERED',
+                       'reason':';'.join(reasons)})
+    return result
 
 
 def safe_flow(period, current, previous, stable, event):
@@ -110,9 +128,20 @@ def main(argv=None):
     p.add_argument('--end', default='20260630')
     p.add_argument('--offline', action='store_true')
     p.add_argument('--refresh', action='store_true')
+    p.add_argument('--progress-file', type=Path, help='Local progress receipt for the bounded frontend worker')
     p.add_argument('--browser-source-dir', type=Path)
     p.add_argument('--source-manifest', type=Path, help='Replay source snapshots from a previous release_report.json; requires --offline')
     a = p.parse_args(argv)
+    progress_events=[]
+    def progress(stage, message, **details):
+        if a.progress_file:
+            if not progress_events or progress_events[-1]['stage']!=stage:
+                progress_events.append({'stage':stage,'at':utc_now()})
+            a.progress_file.parent.mkdir(parents=True,exist_ok=True)
+            temporary=a.progress_file.with_suffix('.tmp')
+            temporary.write_text(json.dumps({'stage':stage,'message':message,'updated_at_utc':utc_now(),'events':progress_events,**details}),encoding='utf-8')
+            temporary.replace(a.progress_file)
+    progress('CHECKING_SOURCES','Checking saved sources; only missing inputs will be downloaded')
     if a.offline and a.refresh:
         p.error('offline and refresh are mutually exclusive')
     if a.source_manifest and not a.offline:
@@ -147,6 +176,7 @@ def main(argv=None):
         specs += [(f'fdic_extended_{q}.json', 'fdic', q) for q in needed_periods(periods)]
         specs += [(name, name, None) for name in STRUCTURE_FIELDS]
         for name, kind, q in specs:
+            progress('DOWNLOADING','Checking cache / acquiring '+name,completed_sources=len(report['sources']),total_sources=len(specs))
             try:
                 if replay:
                     record = dict(replay[name])
@@ -161,8 +191,11 @@ def main(argv=None):
             except (ValueError, OSError, KeyError, requests.RequestException, zipfile.BadZipFile) as error:
                 report['source_errors'].append({'filename': name, 'reason': failure_reason(error), 'error': str(error)[:500]})
             save_report()
-        if report['source_errors']:
+        if any(name not in paths for name in STRUCTURE_FIELDS):
             report['processing_status'] = 'BLOCKED_INPUTS'
+            report['period_coverage']=[{'report_date':q,'status':'MISSING','reason':'REQUIRED_OWNERSHIP_OR_EVENT_SOURCE_UNAVAILABLE'} for q in periods]
+            report['missing_periods']=periods
+            write_csv(out/'period_coverage.csv',report['period_coverage'],['report_date','status','reason'])
             save_report()
             print(json.dumps(report, indent=2))
             return 1
@@ -171,16 +204,20 @@ def main(argv=None):
             for q in needed_periods(periods):
                 name = f'fdic_schedules_{q}.json'
                 if name in replay:
-                    record = dict(replay[name])
-                    if sha256(Path(record['snapshot'])) != record['sha256']:
-                        raise ValueError('Expanded replay source hash mismatch')
-                    validate_source(Path(record['snapshot']), 'fdic', q)
-                    record['acquisition'] = 'REPLAYED_SNAPSHOT'
-                    paths[f'fdic_extended_{q}.json'] = Path(record['snapshot'])
-                    report['sources'].append(record)
+                    try:
+                        record = dict(replay[name])
+                        if sha256(Path(record['snapshot'])) != record['sha256']:
+                            raise ValueError('Expanded replay source hash mismatch')
+                        validate_source(Path(record['snapshot']), 'fdic', q)
+                        record['acquisition'] = 'REPLAYED_SNAPSHOT'
+                        paths[f'fdic_extended_{q}.json'] = Path(record['snapshot'])
+                        report['sources'].append(record)
+                    except (ValueError,OSError,KeyError) as error:
+                        report['source_errors'].append({'filename':name,'reason':failure_reason(error),'error':str(error)[:500]})
         if not a.offline:
             for q in needed_periods(periods):
                 try:
+                    progress('DOWNLOADING','Checking expanded bank schedules for '+q)
                     record = download_extended(client, root, q, bank_fields, a.refresh)
                     paths[f'fdic_extended_{q}.json'] = Path(record['snapshot'])
                     report['sources'].append(record)
@@ -204,10 +241,33 @@ def main(argv=None):
             period_cache[q] = banks, holders, active_control_parents(relations, q)
         return period_cache[q]
 
+    available=set()
+    for q in needed_periods(periods):
+        if f'fdic_extended_{q}.json' not in paths or f'BHCF{q}.ZIP' not in paths:continue
+        try:
+            data(q)
+            available.add(q)
+        except (ValueError,OSError,KeyError,zipfile.BadZipFile) as error:
+            report['source_errors'].append({'filename':'financial_inputs_'+q,'reason':failure_reason(error),'error':str(error)[:500]})
+    requested_periods=list(periods)
+    detailed={s.get('period') for s in report['sources'] if s['filename'].startswith('fdic_schedules_') and s.get('period') in available}
+    period_coverage=plan_period_delivery(periods,available,detailed)
+    for item in period_coverage:
+        if item['status']!='MISSING' and any(item['report_date'] in s['filename'] for s in report['source_errors']):
+            item['status']='DELIVERED_WITH_LIMITATIONS'
+            item['reason']=';'.join(filter(None,[item['reason'],'SOURCE_ACQUISITION_WARNING_REVIEW_PROVENANCE']))
+    report.update(requested_periods=requested_periods,period_coverage=period_coverage,
+                  delivered_periods=[r['report_date'] for r in period_coverage if r['status']!='MISSING'],
+                  missing_periods=[r['report_date'] for r in period_coverage if r['status']=='MISSING'])
+    write_csv(out/'period_coverage.csv',period_coverage,['report_date','status','reason'])
+    periods=report['delivered_periods']
+    if not periods:
+        report['processing_status']='BLOCKED_INPUTS';save_report();return 1
     for q in periods:
+        progress('PROCESSING','Building institutions and financial measures for '+q,period=q)
         banks, holders, parents = data(q)
         prior = previous_quarter(q)
-        old_banks, old_holders, old_parents = data(prior) if q[4:6] != '03' else ([], [], {})
+        old_banks, old_holders, old_parents = data(prior) if q[4:6] != '03' and prior in available else ([], [], {})
         core, ledger = build_groups(banks, holders, parents, q, old_banks, old_holders)
         members = defaultdict(list)
         bank_by_cert = {as_int(b['CERT']): b for b in banks}
@@ -301,18 +361,31 @@ def main(argv=None):
         coverage.extend({'report_date': q, 'measure': name, 'status': status, 'count': count} for (name, status), count in sorted(counts.items()))
         print(f'{q}: {len(core)} organisation rows', flush=True)
 
+    progress('VALIDATING','Checking unique keys, ownership gaps and accounting identities')
+    raw_rows = all_rows
+    all_rows, quarantine, input_checks, checks, withheld = apply_delivery_quality(raw_rows)
     keys = [(r['entity_key'], r['report_date']) for r in all_rows]
     duplicates = len(keys) - len(set(keys))
     unresolved = sum(r['top_rssd'] is None for r in all_ledger)
     failures = sum(c['status'] == 'FAIL' for c in checks)
-    tables = {'organisation_financials': all_rows, 'ownership_ledger': all_ledger, 'validation': checks, 'measure_coverage': coverage}
+    tables = {'organisation_financials': all_rows, 'ownership_ledger': all_ledger, 'validation': checks,
+              'validation_input': input_checks, 'measure_coverage': coverage,
+              'raw_organisation_financials': raw_rows, 'financial_quarantine': quarantine}
+    # An empty quarantine is still a downloadable, header-only evidence file.
+    if not quarantine:
+        write_csv(out/'financial_quarantine.csv', [], list(raw_rows[0]))
+    output_columns=list(raw_rows[0])
+    (out/'output_dictionary.json').write_text(json.dumps({'schema_version':'OUTPUT_DICTIONARY_V1',
+        'column_count':len(output_columns),'columns':build_dictionary(output_columns,mapping),
+        'sources':mapping.get('sources',[])},indent=2),encoding='utf-8')
+    progress('EXPORTING','Writing the CSV, coverage and validation outputs')
     with duckdb.connect(str(out / 'dataset.duckdb')) as con:
         for name, rows in tables.items():
             if not rows:
                 continue
             columns = list(dict.fromkeys(key for row in rows for key in row))
             write_csv(out / (name + '.csv'), rows, columns)
-            if name == 'organisation_financials':
+            if name in ('organisation_financials', 'raw_organisation_financials', 'financial_quarantine'):
                 text = {'entity_key', 'report_date', 'basis', 'release_status', 'coverage_note', 'name', 'classification_status', 'primary_source'}
                 boolean = {'nested_bank_overlap', 'flow_perimeter_review'}
                 types = {col: 'VARCHAR' if col in text else 'BOOLEAN' if col in boolean else 'BIGINT' for col in columns}
@@ -320,9 +393,15 @@ def main(argv=None):
             else:
                 con.execute(f'CREATE TABLE {name} AS SELECT * FROM read_csv_auto(?, header=true, sample_size=-1)', [str(out / (name + '.csv'))])
             con.execute(f'COPY {name} TO ? (FORMAT PARQUET, COMPRESSION ZSTD)', [str(out / (name + '.parquet'))])
-    report.update(processing_status='COMPLETED', finished_at_utc=utc_now(), quarters=len(periods),
+    report.update(processing_status='PARTIAL' if any(r['status']!='DELIVERED' for r in period_coverage) or report['source_errors'] else 'COMPLETED', finished_at_utc=utc_now(), quarters=len(periods),
                   organisation_quarters=len(all_rows), duplicate_keys=duplicates, unresolved_ownership=unresolved,
                   failed_accounting_checks=failures, schedule_fields=len(fields),
+                  quality_policy='CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1',
+                  upstream_organisation_quarters=len(raw_rows), financial_rows_quarantined=len(quarantine),
+                  input_failed_accounting_checks=sum(c['status']=='FAIL' for c in input_checks),
+                  accounting_checks_passed=sum(c['status']=='PASS' for c in checks),
+                  accounting_checks_not_testable=sum(c['status'].startswith('NOT_TESTABLE') for c in checks),
+                  uncertain_quarter_values_withheld=withheld,
                   release_blockers=['Historical coverage not extended to maximum available',
                      'Institution types and foreign ultimate-parent scope not fully verified',
                      'Detailed Call Report equivalents not all mapped',
@@ -333,10 +412,13 @@ def main(argv=None):
     lines = ['# Dataset release report', '', 'Status: BLOCKED_REVIEW_REQUIRED',
              f'Quarters: {len(periods)}; organisation-quarter rows: {len(all_rows)}; mapped schedule fields: {len(fields)}',
              f'Duplicate keys: {duplicates}; unresolved ownership records: {unresolved}; failed accounting checks: {failures}',
+             f'Input check failures: {report["input_failed_accounting_checks"]}; quarantined rows: {len(quarantine)}; uncertain quarterly values withheld: {withheld}',
+             'validation.csv covers delivered rows; validation_input.csv retains checks on the original rows. Missing-input checks are not passes.',
              '', '## Blocks to a final research release', ''] + ['- ' + b for b in report['release_blockers']]
     (out / 'release_report.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     (out / 'REVIEW_REQUIRED.txt').write_text('Not an approved final dataset. See release_report.md.\n', encoding='utf-8')
     print(out)
+    progress('COMPLETED_REVIEW_REQUIRED','Build finished; review validation and coverage before research use')
     return 2
 
 

@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parents[1] / 'src'))
 from release_mvp import freeze_flows, accounting_checks, EXPECTED_PERIODS, quarantine_conflicts
+from release_mvp import apply_delivery_quality
 
 
 def test_mvp_suppresses_only_uncertain_quarter_flows():
@@ -31,3 +32,27 @@ def test_quarantine_keeps_original_conflicting_values_and_other_quarters():
     good, bad = quarantine_conflicts(rows, checks)
     assert good == [rows[1]] and bad == [rows[0]]
     assert bad[0]['value'] == 5 and len(rows) == 2
+
+
+def test_on_demand_withholds_flows_and_keeps_input_failures():
+    raw=[{'entity_key':'GOOD','report_date':'20240630','flow_perimeter_review':True,
+          'net_income_quarter':7,'net_income_ytd':20,'total_assets':100},
+         {'entity_key':'BAD','report_date':'20240630','flow_perimeter_review':True,
+          'interest_income_total_quarter':10,'interest_expense_total_quarter':3,'net_interest_income_quarter':8}]
+    rows,bad,input_checks,main,suppressed=apply_delivery_quality(raw)
+    assert [r['entity_key'] for r in rows]==['GOOD']
+    assert rows[0]['net_income_quarter'] is None and rows[0]['net_income_ytd']==20
+    assert rows[0]['total_assets']==100 and raw[0]['net_income_quarter']==7
+    assert len(bad)==1 and suppressed==4
+    assert any(c['status']=='FAIL' for c in input_checks)
+    assert not any(c['status']=='FAIL' for c in main)
+    assert any(c['status'].startswith('NOT_TESTABLE') for c in main)
+
+
+def test_on_demand_rejects_duplicates_or_quarantine_of_whole_quarter():
+    import pytest
+    good={'entity_key':'GOOD','report_date':'20240630'}
+    with pytest.raises(ValueError,match='Duplicate'):apply_delivery_quality([good,good])
+    bad={'entity_key':'BAD','report_date':'20240630','interest_income_total_ytd':10,
+         'interest_expense_total_ytd':3,'net_interest_income_ytd':8}
+    with pytest.raises(ValueError,match='entire'):apply_delivery_quality([bad])

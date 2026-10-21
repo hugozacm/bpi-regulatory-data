@@ -1,5 +1,9 @@
 # Current architecture — stakeholder walkthrough
 
+> Historical or alternate implementation guide. For the active public pilot, controls, quality gate and current run commands, use [README.md](README.md), [CONNECTED_FRONTEND.md](CONNECTED_FRONTEND.md) and [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md). Counts and disconnected-hosting statements below describe that earlier stage, not the live Site.
+
+> Historical/pilot document: retained for audit, not the current implementation contract. Use [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md), [MVP_V1.md](MVP_V1.md), [HISTORICAL_EXTENSION.md](HISTORICAL_EXTENSION.md) and [REQUIREMENTS.md](REQUIREMENTS.md) for current scope. Any fixed December 2025 merger-reference proposal below is withdrawn; predecessors remain separate before official mergers.
+
 **New integrated entry point:** `src/build_dataset.py` uses snapshot acquisition, `top_level.py` grouping, the active `config/expanded_measures.json`, and combined financial/coverage/validation exports. See [DATASET_RELEASE.md](DATASET_RELEASE.md). Earlier stage descriptions below are retained but are not the complete integrated architecture.
 
 > Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.

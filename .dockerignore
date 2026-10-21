@@ -1,0 +1,8 @@
+*
+!Dockerfile.backend
+!requirements.txt
+!requirements-hosting.txt
+!src/
+!src/*.py
+!config/
+!config/*.json

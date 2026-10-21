@@ -1,5 +1,9 @@
 # Dated top-level grouping — first implementation
 
+> Historical or alternate implementation guide. For the active public pilot, controls, quality gate and current run commands, use [README.md](README.md), [CONNECTED_FRONTEND.md](CONNECTED_FRONTEND.md) and [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md). Counts and disconnected-hosting statements below describe that earlier stage, not the live Site.
+
+> Historical/pilot document: retained for audit, not the current implementation contract. Use [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md), [MVP_V1.md](MVP_V1.md), [HISTORICAL_EXTENSION.md](HISTORICAL_EXTENSION.md) and [REQUIREMENTS.md](REQUIREMENTS.md) for current scope. Any fixed December 2025 merger-reference proposal below is withdrawn; predecessors remain separate before official mergers.
+
 The integrated successor is now [DATASET_RELEASE.md](DATASET_RELEASE.md). This file records the earlier standalone pilot and its limitations; use `build_dataset.py` for expanded multi-quarter output.
 
 Implemented 21 October 2026. This is an isolated pilot, not a replacement for the existing panel or a claim that all new requirements are complete.

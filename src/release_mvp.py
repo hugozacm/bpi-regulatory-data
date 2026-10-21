@@ -12,6 +12,7 @@ import duckdb
 from bpi_pipeline import sha256, write_csv
 from top_level import resolve_top
 from history_audit import active_control_parents, zip_rows
+from output_dictionary import build_dictionary
 
 
 EXPECTED_PERIODS = [f'{y}{q}' for y in range(2023, 2027) for q in ('0331', '0630', '0930', '1231')
@@ -69,6 +70,25 @@ def quarantine_conflicts(rows, checks):
     bad = [r for r in rows if (r['entity_key'], str(r['report_date'])) in failed]
     good = [r for r in rows if (r['entity_key'], str(r['report_date'])) not in failed]
     return good, bad
+
+
+def apply_delivery_quality(raw_rows):
+    """Shared flow/check policy for on-demand builds; preserve input failure evidence."""
+    input_checks = [c for row in raw_rows for c in accounting_checks(row)]
+    protected, suppressed = [], 0
+    for raw in raw_rows:
+        row, count = freeze_flows(raw)
+        row['release_status'] = 'VALIDATED_RESEARCH_DRAFT'
+        protected.append(row)
+        suppressed += count
+    protected_checks = [c for row in protected for c in accounting_checks(row)]
+    rows, quarantine = quarantine_conflicts(protected, input_checks + protected_checks)
+    main_checks = [c for row in rows for c in accounting_checks(row)]
+    if len({(r['entity_key'], str(r['report_date'])) for r in raw_rows}) != len(raw_rows):
+        raise ValueError('Duplicate organisation-quarter keys; cannot release')
+    if {str(r['report_date']) for r in raw_rows} != {str(r['report_date']) for r in rows}:
+        raise ValueError('Quarantine removed an entire requested quarter; cannot release')
+    return rows, quarantine, input_checks, main_checks, suppressed
 
 
 def main(argv=None):
@@ -149,46 +169,7 @@ def main(argv=None):
     not_testable = sum(c['status'].startswith('NOT_TESTABLE') for c in main_checks)
     accepted = duplicates == 0 and failures == 0 and passed > 0
     dictionary = json.loads(mapping_path.read_text(encoding='utf-8'))
-    derived = {}
-    for field in dictionary['fields']:
-        for name in ([field['name']] if field['type'] == 'stock' else [field['name'] + '_ytd', field['name'] + '_quarter']):
-            derived[name] = field
-    dictionary_rows = []
-    core_fields = {
-        'total_assets': ('BHCK2170 / ASSET', 'Quarter-end total assets; source basis identifies the reporting perimeter'),
-        'total_equity': ('BHCT3210 / EQ', 'Y-9C holding-company equity or bank-reported equity; not fully harmonised'),
-        'total_loans': ('BHCK2122', 'Y-9C loans net of unearned income; not populated from bank net-allowance loans'),
-        'loans_net_allowances': ('LNLSNET', 'FDIC bank loans net of allowances; separate definition'),
-        'total_deposits': ('BHDM6631+BHDM6636+BHFN6631+BHFN6636 / DEP', 'Strict component sum or FDIC bank aggregate'),
-        'net_income_ytd': ('BHCK4340', 'Reported holder YTD; bank-only historical YTD withheld'),
-        'net_income_quarter': ('BHCK4340 / NETINC', 'Q1 direct or adjacent YTD difference; uncertain quarter flows withheld'),
-        'bank_member_net_income_ytd': ('NETINC', 'Current members YTD evidence; not historical group YTD'),
-        'top_rssd': ('NIC ID_RSSD_PARENT / ID_RSSD_OFFSPRING', 'Highest dated control root; not independently verified institution classification'),
-        'entity_key': ('TOP_RSSD_<top_rssd>', 'Stable root identifier, not a retroactive merger identifier'),
-        'report_date': ('RSSD9999 / REPDTE', 'Quarter-end date YYYYMMDD'),
-        'bank_count': ('Ownership ledger', 'Number of assigned bank records; not proof of complete group membership'),
-        'basis': ('Pipeline selection', 'CONSOLIDATED_Y9C or BANK_ONLY_AGGREGATE; independent candidates use the latter basis'),
-        'name': ('RSSD9017 / NAMEHCR / NAME', 'May be absent when no verified root name is available'),
-        'release_status': ('MVP packaging', 'MVP_V1_RESEARCH_DRAFT; not financial certification'),
-        'coverage_note': ('Pipeline review', 'Reporting perimeter and classification limitations'),
-        'nested_bank_overlap': ('Dated NIC graph', 'Nested reporting banks detected; aggregate bank values withheld'),
-        'flow_perimeter_review': ('NIC control dates and transformations', 'Uncertain quarter flows withheld in MVP; reported YTD evidence retained'),
-        'classification_status': ('Pipeline review', 'Institution types not independently verified'),
-        'primary_source': ('Pipeline selection', 'FR_Y9C or FDIC_BANK_ONLY'),
-    }
-    for field in ('DEP', 'DEPDOM', 'DEPFOR', 'DEPIDOM', 'DEPNIDOM'):
-        core_fields['bank_sum_' + field] = (field, 'Strict matched-bank-perimeter sum; separate from consolidated deposits')
-    for name in cols:
-        f = derived.get(name, {})
-        dictionary_rows.append({'column': name, 'unit': 'USD_thousands' if name in derived or name in {
-            'total_assets', 'total_equity', 'total_loans', 'loans_net_allowances', 'total_deposits',
-            'net_income_ytd', 'net_income_quarter', 'bank_member_net_income_ytd'} or name.startswith('bank_sum_') else 'metadata',
-            'source_field': f.get('field', core_fields.get(name, ('', ''))[0]), 'fdic_equivalent': f.get('fdic') or '',
-            'schedule': f.get('schedule', ''), 'item': f.get('item', ''),
-            'measurement': 'quarterly_flow' if name.endswith('_quarter') else f.get('type',
-                'stock' if name in {'total_assets', 'total_equity', 'total_loans', 'loans_net_allowances', 'total_deposits'} or name.startswith('bank_sum_') else
-                'YTD_flow' if name in {'net_income_ytd', 'bank_member_net_income_ytd'} else 'metadata'),
-            'notes': f.get('reporting_note', core_fields.get(name, ('', 'See MVP_V1.md'))[1])})
+    dictionary_rows = build_dictionary(cols, dictionary)
     with duckdb.connect(str(out / 'mvp_v1.duckdb')) as con:
         con.execute('CREATE TABLE organisation_financials AS SELECT * FROM read_parquet(?) LIMIT 0', [str(source / 'organisation_financials.parquet')])
         write_csv(out / 'organisation_financials.csv', rows, cols)
@@ -203,7 +184,11 @@ def main(argv=None):
     for name in ('release_report.json', 'ownership_ledger.csv', 'measure_coverage.csv'):
         shutil.copyfile(source / name, out / ('upstream_' + name))
     shutil.copyfile(mapping_path, out / 'measure_mapping.json')
+    delivery_scope = json.loads((root / 'config' / 'delivery_scope.json').read_text(encoding='utf-8'))
     result = {'version': 'MVP_V1', 'status': 'PACKAGED_RESEARCH_DRAFT' if accepted else 'FAILED_MVP_CHECKS',
+              'delivery_scope_version': delivery_scope['scope_version'],
+              'current_mvp_complete': False,
+              'delivery_role': 'INTERIM_SNAPSHOT_NOT_FINAL_MVP',
               'mvp_scope_checks_pass': accepted, 'financially_certified': False,
               'approved_full_historical_release': False, 'periods': periods, 'rows': len(rows), 'columns': len(cols),
               'upstream_rows': len(raw_rows), 'additional_bank_only_groups_excluded': removed,
@@ -221,7 +206,8 @@ def main(argv=None):
                   'Missing components make some accounting tests not testable; absence of failures is not a full pass'],
               'source_build': str(source), 'output': str(out.resolve())}
     (out / 'mvp_manifest.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
-    report = ['# MVP v1 — research draft', '', f'Status: {result["status"]}',
+    report = ['# Interim 2023–2026 snapshot — historical MVP incomplete', '', f'Status: {result["status"]}',
+              'This package does not satisfy the current maximum-history MVP scope. See config/delivery_scope.json.',
               f'Coverage: 2023 Q1–2026 Q2; {len(rows):,} organisation-quarter rows; {len(cols)} columns.',
               f'Unique-key duplicates: {duplicates}. Source hash checks: {len(source_checks)} matched.',
               f'Financial tests: {passed:,} passed; {failures:,} failed; {not_testable:,} not testable due to missing inputs.',

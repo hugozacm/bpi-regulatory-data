@@ -1,5 +1,7 @@
 # BPI MVP v1 — research draft
 
+> **Current scope correction:** The MVP must cover the longest reliable historical period, not just 2023–2026. The existing package is an interim snapshot and does not complete the MVP. Historical acquisition, harmonisation and integration are required MVP work, not optional post-MVP backlog. Earlier statements describing the narrowed delivery as the finished MVP are superseded. See [config/delivery_scope.json](config/delivery_scope.json). Current status: **INCOMPLETE_HISTORICAL_MVP**.
+
 ## Delivery scope agreed on 21 October 2026
 
 One main organisation-by-quarter dataset, 2023 Q1–2026 Q2. This is a finished **MVP delivery under explicit assumptions**, not a financially certified or complete historical database. Any failed mandatory MVP check means the package is not accepted, even if files were written.
@@ -19,7 +21,7 @@ One main organisation-by-quarter dataset, 2023 Q1–2026 Q2. This is a finished 
 
 The delivered cohort contains **59,639 organisation-quarter rows and 236 columns**. Of the 59,674 upstream rows, 33 bank-only groups were excluded for possible missing members and two S&T BANCORP quarters (2024 Q2 and Q3) were quarantined for conflicting trading-revenue identities. Their source values are retained without correction. There are 417 unresolved ownership-ledger records outside grouping. 83,825 uncertain quarter-value cells were withheld.
 
-Financial-test coverage: **71,507 PASS, zero FAIL in the main cohort, and 405,605 NOT_TESTABLE**. Most component tests are not testable, so this is limited validation, not a fully validated financial database. The pre-quarantine report includes two failures. All 44 software tests pass with local fixtures; clean clones skip optional source-dependent tests.
+Financial-test coverage: **71,507 PASS, zero FAIL in the main cohort, and 405,605 NOT_TESTABLE**. Most component tests are not testable, so this is limited validation, not a fully validated financial database. The pre-quarantine report includes two failures. The original packaging run passed 44 software tests; the subsequent historical-extension review expands the suite. See README for the current suite count; clean clones can skip optional source-dependent tests.
 
 - `organisation_financials.csv` / `.parquet`: the **one main dataset**, also available in `mvp_v1.duckdb`. Monetary values are USD thousands.
 - `data_dictionary.csv`: all columns, source mappings, units and notes. `measure_mapping.json` preserves the active schedule map.

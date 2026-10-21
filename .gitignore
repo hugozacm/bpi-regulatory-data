@@ -11,4 +11,19 @@ research/*.ZIP
 research/*.zip
 research/snapshots/
 research/download_cache/
+research/history/
 test_temp*/
+
+# Local datasets, generated Site checkout/assets and temporary test evidence.
+research/
+public_demo/
+.test-*/
+review_images/github_repository_created.png
+
+# Never commit credentials or machine-local settings.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.streamlit/secrets.toml

@@ -1,0 +1,46 @@
+{
+  "scope_version": "HISTORICAL_MVP_20261021",
+  "active_frontend_pilot": {
+    "status": "CONNECTED_AND_LIVE_TESTED",
+    "supported_start": "20230331",
+    "supported_end": "20260630",
+    "historical_expansion_paused_for_this_pilot": true,
+    "runtime": "Restricted local processor through temporary HTTPS tunnel",
+    "requires_awake_computer_and_running_tunnel": true,
+    "verified_live_job": "a4fd7c2d8e0f47ceac766af9b23384cd",
+    "historical_programme_complete": false
+  },
+  "approved_delivery_decisions": {
+    "interface": "Existing ChatGPT Site",
+    "budget": 0,
+    "local_processing_acceptable": true,
+    "acquisition": "Requested quarters only; reuse verified snapshots; explicit refresh for amendments",
+    "population": "All available banks and savings institutions and their holding companies",
+    "parent_target": "Highest US holding company at each quarter; foreign ultimate parent as reference only when verified",
+    "parent_target_implementation_note": "Domestic-vs-global root classification still requires verification",
+    "columns": 236,
+    "delivery_format": "CSV plus dictionary, provenance and validation",
+    "partial_delivery": true,
+    "public_jobs": "Connected public pilot; one active and one queued job; 10 submissions per UTC day; bounded requests",
+    "acceptance": "Website period selection triggers acquisition/build/status/download, or accepted temporary local execution and publication",
+    "extra_stress_models_and_ratios": false,
+    "approval": "Hugo"
+  },
+  "target": "Longest reliable official historical coverage for banks and holding companies",
+  "fixed_2023_start_is_acceptable_as_final_mvp": false,
+  "earliest_discovered_bank_archive": "19760331",
+  "earliest_discovered_holder_archive": "19860930",
+  "common_start_must_not_discard_earlier_bank_history": true,
+  "historical_dates_are_source_availability_not_harmonised_coverage": true,
+  "required_main_output": "One organisation-quarter dataset with explicit period-specific availability and source basis",
+  "completion_requires": [
+    "Documented acquisition coverage and gaps across official historical sources",
+    "Historical bank and holding-company financial processing with period-specific verified mappings",
+    "Dated highest-parent ownership and no duplicate consolidated/subsidiary core balances",
+    "Verified stock and YTD-to-quarter flow treatment with explicit missingness",
+    "Financial validation, provenance and documented historical limitations"
+  ],
+  "mergers": "Predecessors remain separate before official effective dates; no retrospective always-merged series",
+  "current_delivery_status": "INCOMPLETE_HISTORICAL_MVP",
+  "existing_2023_2026_package_role": "INTERIM_SNAPSHOT_NOT_FINAL_MVP"
+}

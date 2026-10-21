@@ -1,0 +1,209 @@
+"""Local analyst interface for the scoped BPI regulatory-data research MVP."""
+from __future__ import annotations
+
+import json
+import csv
+import io
+import subprocess
+import sys
+from pathlib import Path
+
+import streamlit as st
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'src'))
+from release_mvp import EXPECTED_PERIODS
+DATASET_ROOT = ROOT / "outputs" / "dataset"
+RELEASE_ROOT = ROOT / "outputs" / "mvp_v1"
+QUARTERS = [f"{year}{month}"+day for year in range(2023, 2027)
+            for month, day in (("03", "31"), ("06", "30"), ("09", "30"), ("12", "31"))
+            if f"{year}{month}{day}" <= "20260630"]
+
+
+def directories(base: Path, marker: str) -> list[Path]:
+    if not base.is_dir():
+        return []
+    return sorted((p for p in base.iterdir() if p.is_dir() and (p / marker).is_file()),
+                  key=lambda p: p.name, reverse=True)
+
+
+def run_script(script: str, arguments: list[str]) -> tuple[int, str]:
+    command = [sys.executable, str(ROOT / "src" / script), *arguments]
+    try:
+        result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True,
+                                timeout=1200, check=False)
+    except subprocess.TimeoutExpired:
+        return 124, "The process exceeded the 20-minute limit. Inspect the output directory."
+    except OSError as exc:
+        return 1, f"Unable to start process: {exc}"
+    return result.returncode, (result.stdout + "\n" + result.stderr)[-20000:]
+
+
+def load_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        st.error(f"Cannot read {path.name}: {exc}")
+        return {}
+
+
+st.set_page_config(page_title="BPI Regulatory Data | Research MVP", page_icon="🏦", layout="wide")
+st.markdown("""<style>
+:root {--bpi-navy:#152d4a; --bpi-border:#dfe6ed;}
+.block-container {max-width: 1180px; padding-top: 2.1rem; padding-bottom: 3rem;}
+h1, h2, h3 {color: #152d4a; letter-spacing: -.025em;}
+h1 {font-weight: 720; border-bottom: 2px solid #dfe6ed; padding-bottom: .65rem;}
+div[data-testid="stMetric"] {background: #f6f8fb; border: 1px solid #dfe6ed;
+  border-radius: 8px; padding: 16px 20px;}
+div[data-testid="stMetricLabel"] {color: #4a6076;}
+div[data-testid="stMetricValue"] {color: #152d4a;}
+.stButton > button[kind="primary"] {background: #152d4a; border-color: #152d4a; font-weight: 650;}
+.stButton > button[kind="primary"]:hover {background: #274d74; border-color: #274d74;}
+div[data-testid="stTabs"] button {font-weight: 600;}
+</style>""", unsafe_allow_html=True)
+st.title("Regulatory Data | Research Workspace")
+st.caption("BANKING RESEARCH  /  REGULATORY DATA OPERATIONS  /  MVP v1")
+st.caption("Independent research prototype for the BPI use case; not affiliated with or approved by BPI.")
+st.warning("Research draft only. Passing scoped checks does not certify financial completeness or accuracy.")
+st.info("Currently supported financial mappings: 2023 Q1–2026 Q2. Earlier historical integration is required but unfinished. Local analyst use only; not a secured public service.")
+releases = directories(RELEASE_ROOT, "mvp_manifest.json")
+builds = directories(DATASET_ROOT, "release_report.json")
+overview_a, overview_b, overview_c = st.columns(3)
+overview_a.metric("Available releases", len(releases))
+overview_b.metric("Upstream builds", len(builds))
+overview_c.metric("Delivery status", "Research draft" if releases else "Not generated")
+st.caption("SOURCE ACQUISITION  →  DATASET BUILD  →  QUALITY REVIEW  →  DELIVERY")
+generate, validate, deliver = st.tabs(["01 · Generate dataset", "02 · Validation results", "03 · Download results"])
+
+with generate:
+    st.subheader("Build the regulatory dataset")
+    st.write("Official FDIC and NIC source snapshots are required. Some NIC ZIP files may need "
+             "to be downloaded through a browser and placed in a local folder.")
+    c1, c2 = st.columns(2)
+    with c1:
+        start = st.selectbox("Start quarter", QUARTERS, index=0,
+                             format_func=lambda q: f"{q[:4]} Q{(int(q[4:6])-1)//3+1}")
+    with c2:
+        end = st.selectbox("End quarter", QUARTERS, index=len(QUARTERS)-1,
+                           format_func=lambda q: f"{q[:4]} Q{(int(q[4:6])-1)//3+1}")
+    source_folder = st.text_input("Optional folder containing browser-downloaded NIC ZIPs",
+                                  placeholder=r"C:\Users\...\Downloads\NIC")
+    offline = st.checkbox("Use existing cached sources only (offline)", value=False)
+    if st.button("Build dataset", type="primary", disabled=start > end):
+        args = ["--start", start, "--end", end]
+        if offline:
+            args.append("--offline")
+        if source_folder.strip():
+            source = Path(source_folder.strip()).expanduser()
+            if not source.is_dir():
+                st.error("The NIC source folder does not exist on this computer.")
+                st.stop()
+            args += ["--browser-source-dir", str(source)]
+        with st.spinner("Running the regulatory data pipeline. This may take several minutes..."):
+            status, output = run_script("build_dataset.py", args)
+        st.code(output or "(No process output)", language="text")
+        if status == 0:
+            st.success("Builder finished. Review its release report before packaging.")
+        else:
+            st.warning(f"Builder returned exit code {status}. This may reflect broader-target "
+                       "review blockers or missing inputs; inspect processing_status and source_errors.")
+    builds = directories(DATASET_ROOT, "release_report.json")
+    if builds:
+        chosen = st.selectbox("Upstream build to inspect", builds,
+                              format_func=lambda p: p.name)
+        upstream = load_json(chosen / "release_report.json")
+        st.write("Processing status:", upstream.get("processing_status", "Unknown"))
+        if upstream.get("source_errors"):
+            st.error("Source acquisition errors prevent packaging.")
+            st.json(upstream["source_errors"])
+        ready = upstream.get("processing_status") == "COMPLETED" and not upstream.get("source_errors")
+        financials = chosen / 'organisation_financials.csv'
+        if ready and financials.is_file():
+            st.warning('Unfiltered upstream draft: accounting failures and unresolved groups may remain. Review before use.')
+            with financials.open(encoding='utf-8', newline='') as handle:
+                reader = csv.DictReader(handle)
+                preview = []
+                periods = set()
+                for row in reader:
+                    periods.add(row['report_date'])
+                    if len(preview) < 20:
+                        preview.append(row)
+            st.caption('First 20 rows; financial values shown as source strings to preserve precision. Blank is not zero.')
+            st.dataframe(preview)
+            csv_output = io.StringIO(newline='')
+            with financials.open(encoding='utf-8', newline='') as handle:
+                writer = csv.writer(csv_output)
+                for row in csv.reader(handle):
+                    writer.writerow(["'" + value if value.lstrip().startswith(('=', '+', '@')) or
+                                     (value.lstrip().startswith('-') and not value.replace('-', '', 1).isdigit())
+                                     else value for value in row])
+            st.download_button('Download selected-build CSV (review draft)', csv_output.getvalue(),
+                               file_name='organisation_financials_review_draft.csv', mime='text/csv')
+            for filename in ('release_report.json', 'validation.csv', 'measure_coverage.csv'):
+                path = chosen / filename
+                if path.is_file():
+                    st.download_button('Download ' + filename, path.read_bytes(), file_name=filename,
+                                       key='upstream_' + filename)
+            exact_package = sorted(periods) == EXPECTED_PERIODS
+        else:
+            exact_package = False
+        if not exact_package:
+            st.caption('The frozen 2023–2026 snapshot packager is unavailable for this build. Selected-quarter drafts can be downloaded above.')
+        if st.button("Package interim 2023–2026 snapshot", disabled=not (ready and exact_package)):
+            with st.spinner("Checking source hashes, quarantining conflicts and packaging..."):
+                status, output = run_script("release_mvp.py", ["--input", str(chosen)])
+            st.code(output or "(No process output)", language="text")
+            if status == 0:
+                st.success("MVP packaging completed. Open Download results.")
+            else:
+                st.error(f"Packaging failed (exit {status}); do not deliver this release.")
+    else:
+        st.info("No upstream build found. Run the builder or copy an existing build to outputs/dataset.")
+
+releases = directories(RELEASE_ROOT, "mvp_manifest.json")
+with validate:
+    st.subheader("Release validation")
+    if not releases:
+        st.info("No packaged MVP release is available on this computer.")
+    else:
+        selected = st.selectbox("Research draft release", releases, key="validation_release",
+                                format_func=lambda p: p.name)
+        manifest = load_json(selected / "mvp_manifest.json")
+        st.caption("Release manifest · full audit details available below")
+        with st.expander("View complete release manifest"):
+            st.json(manifest)
+        report = selected / "VALIDATION_REPORT.md"
+        if report.is_file():
+            st.markdown(report.read_text(encoding="utf-8"))
+        else:
+            st.warning("Validation report is missing.")
+        exceptions = selected / "exceptions.csv"
+        if exceptions.is_file():
+            st.download_button("Download exceptions CSV", exceptions.read_bytes(),
+                               file_name="exceptions.csv", mime="text/csv")
+
+with deliver:
+    st.subheader("Download the research dataset")
+    if not releases:
+        st.info("First generate and package a dataset.")
+    else:
+        selected = st.selectbox("Packaged release", releases, key="download_release",
+                                format_func=lambda p: p.name)
+        st.info("Financial figures are in USD thousands. Blank values must not be interpreted as zero.")
+        st.markdown("**Deliverable package**")
+        st.caption("Share the dictionary, validation report and exceptions alongside the dataset.")
+        for filename, mime in (
+            ("organisation_financials.csv", "text/csv"),
+            ("organisation_financials.parquet", "application/octet-stream"),
+            ("data_dictionary.csv", "text/csv"),
+            ("VALIDATION_REPORT.md", "text/markdown"),
+            ("mvp_manifest.json", "application/json"),
+        ):
+            path = selected / filename
+            if path.is_file():
+                st.download_button(f"Download {filename}", path.read_bytes(),
+                                   file_name=filename, mime=mime, key=filename)
+            else:
+                st.warning(f"Missing expected deliverable: {filename}")
+        st.caption("Keep the manifest, dictionary, validation report and exceptions alongside "
+                   "the financial dataset when sharing it with analysts.")

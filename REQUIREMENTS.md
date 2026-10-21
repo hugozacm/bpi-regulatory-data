@@ -1,5 +1,7 @@
 # Agreed direction — 21 October 2026
 
+> **Current scope correction:** The MVP must cover the longest reliable historical period, not just 2023–2026. The existing package is an interim snapshot and does not complete the MVP. Historical acquisition, harmonisation and integration are required MVP work, not optional post-MVP backlog. Earlier statements describing the narrowed delivery as the finished MVP are superseded. See [config/delivery_scope.json](config/delivery_scope.json). Current status: **INCOMPLETE_HISTORICAL_MVP**.
+
 **Subsequent MVP scope decision:** Hugo authorised closing a research-draft MVP with 2023 Q1–2026 Q2 coverage, explicit missing fields, dated grouping, unresolved cases excluded and uncertain flows withheld. [MVP_V1.md](MVP_V1.md) defines that delivery and backlog. The broader goals below remain aspirational, not completed acceptance requirements for MVP v1.
 
 This records Hugo's instructions in this chat. It is not a claim of separate Laura/BPI approval, complete implementation or financial certification. It supersedes earlier proposed fixed-reference, retroactively combined merger histories.
@@ -16,7 +18,7 @@ This records Hugo's instructions in this chat. It is not a claim of separate Lau
 ## Dates and mergers
 
 - Extend backwards as far as reliable official online data and verified mappings allow, through the latest available reporting quarter.
-- Determine actual earliest/latest availability from sources; neither has yet been established by this requirements update. Existing validated financial inputs cover 2023–2025.
+- Source discovery has identified bank archive links for 1976 Q1–2010 Q4 and holder archive links for 1986 Q3–2021 Q1. The packaged main MVP covers 2023 Q1–2026 Q2. Historical raw staging initially processes 1986 Q3; discovered ranges are not yet harmonised analytical coverage. See [HISTORICAL_EXTENSION.md](HISTORICAL_EXTENSION.md).
 - Before the official merger date, predecessor organisations remain separate. Following the effective date, apply the relevant successor ownership.
 - Do not rewrite pre-merger history as if the organisations had always been combined. The old provisional 31 December 2025 merger reference date is withdrawn.
 - Quarter-end membership follows dated ownership. Preserve reported consolidated income; do not mechanically add predecessor YTD income. Acquisition-quarter flows, partial purchases, failures and differing ownership/consolidation dates require evidenced treatment and review flags, not invented allocations.

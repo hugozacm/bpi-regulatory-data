@@ -1,0 +1,24 @@
+{
+  "period": "20010331",
+  "status": "BOUNDED_HISTORICAL_PILOT_NOT_COMPLETE_HISTORY",
+  "unit": "USD_thousands",
+  "source_form": "https://www.federalreserve.gov/apps/reportingforms/Download/DownloadAttachment?guid=b372d528-bbf4-4239-8c4a-9906dc98eb81",
+  "structure_dictionary": "https://www.chicagofed.org/banking/financial-institution-reports/structure-and-geographical-variables",
+  "stock_fields": {"total_assets":"BHCK2170", "total_equity":"BHCK3210"},
+  "ytd_fields": {
+    "net_income":"BHCK4340",
+    "interest_income_total":"BHCK4107",
+    "interest_expense_total":"BHCK4073",
+    "net_interest_income":"BHCK4074",
+    "noninterest_income_total":"BHCK4079",
+    "noninterest_expense_total":"BHCK4093"
+  },
+  "deposit_components": ["BHDM6631", "BHDM6636", "BHFN6631", "BHFN6636"],
+  "limitations": [
+    "This mapping was checked for March 2001 only and is not extrapolated to other quarters.",
+    "Net income includes the historical extraordinary-item treatment; cross-vintage accounting differences remain.",
+    "Loan-definition and detailed HI/HI-A/HI-B historical equivalences not independently verified are withheld.",
+    "Highest domestic root cannot be inferred from a foreign or missing ultimate root; those groups are quarantined.",
+    "Missing source fields and confidential values are not zero; no financial certification is claimed."
+  ]
+}

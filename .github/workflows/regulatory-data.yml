@@ -1,0 +1,58 @@
+name: Prepare regulatory research draft
+on:
+  workflow_dispatch:
+    inputs:
+      from_year:
+        description: From year (verified financial mappings currently 2023 onwards)
+        required: true
+        default: '2024'
+      from_quarter:
+        description: From quarter
+        type: choice
+        options: ['1', '2', '3', '4']
+        default: '1'
+      to_year:
+        description: To year (currently through 2026 Q2)
+        required: true
+        default: '2024'
+      to_quarter:
+        description: To quarter (maximum four quarters per run)
+        type: choice
+        options: ['1', '2', '3', '4']
+        default: '1'
+permissions:
+  contents: read
+concurrency:
+  group: regulatory-data-manual
+  cancel-in-progress: false
+jobs:
+  prepare:
+    # Owner enables this only AFTER checking Actions allowance and spending controls.
+    if: vars.REGDATA_ACTIONS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --no-cache-dir -r requirements.txt
+      - run: python -m pytest -q tests/test_actions_job.py
+      - name: Download, process and validate
+        id: pipeline
+        env:
+          FROM_YEAR: ${{ inputs.from_year }}
+          FROM_QUARTER: ${{ inputs.from_quarter }}
+          TO_YEAR: ${{ inputs.to_year }}
+          TO_QUARTER: ${{ inputs.to_quarter }}
+        run: python src/run_actions_job.py
+      - name: Downloadable draft and status (one-day retention)
+        if: always() && steps.pipeline.outputs.artifact_path != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: regulatory-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.pipeline.outputs.artifact_path }}
+          retention-days: 1
+          if-no-files-found: error
