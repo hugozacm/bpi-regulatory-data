@@ -20,7 +20,7 @@ Old jobs do not acquire this policy retroactively. Their Site result is labelled
 
 ## Download and refresh behaviour
 
-Built CSVs transfer in 1 MiB pieces with up to three attempts per piece. The browser verifies the full byte count and SHA-256 before saving one CSV. A retry retains completed pieces in tab memory; **Resume CSV download** does not rebuild.
+All job CSV downloads—including validation, input validation, quarantine, period coverage and measure coverage—transfer in 1 MiB pieces with up to three attempts per piece. The browser verifies the full byte count and SHA-256 before saving one CSV. A retry retains completed pieces in tab memory; the same report button resumes that report without rebuilding. Only one CSV transfer runs at a time. Build/reconnect controls are guarded during transfers and preview loading, and filenames retain the original job's dates.
 
 Refreshing restarts an incomplete transfer, but session storage restores the job status/result in the same tab. A `?job=<32-hex-id>` link can reopen an existing result on the configured processor. Job IDs are public-source result references, not authentication. Sources and results remain on the local processor.
 
@@ -44,8 +44,8 @@ Logs: `outputs/pilot_runtime/`. Private job records/logs: `outputs/public_jobs/`
 | POST /pilot/jobs | Exactly start/end quarter-end strings; submit bounded job |
 | GET /pilot/jobs/{id} | Actual status, events and quality counts |
 | GET /pilot/jobs/{id}/dataset | Paged preview of delivered rows |
-| GET /pilot/jobs/{id}/result-manifest | Download byte count, part count and SHA-256 |
-| GET /pilot/jobs/{id}/result-part?index=N | One bounded CSV byte piece |
+| GET /pilot/jobs/{id}/result-manifest?file=KIND | Byte count, part count and SHA-256; default KIND=result |
+| GET /pilot/jobs/{id}/result-part?file=KIND&index=N | One bounded piece; KIND is an allowlisted CSV artifact, never a path |
 | GET /pilot/jobs/{id}/result | Legacy whole-CSV route |
 | GET /pilot/jobs/{id}/validation | Delivered-row checks |
 | GET /pilot/jobs/{id}/validation-input | Original-row checks and failure evidence |

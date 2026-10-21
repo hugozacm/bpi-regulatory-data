@@ -10,6 +10,11 @@ Public source: `frontend/executive.html`, `executive.js`, `recovery.js`, `execut
 
 `src/build_public_demo.py` generates `public_demo/dist/`. It retains the existing identity in `public_demo/.openai/hosting.json`. Use the Sites source helper to synchronise, package and publish that exact source state; do not create another Site.
 
+Evidence defaults to the latest saved build carrying the cautious quality policy,
+not a fixed workstation-specific run ID. Use `--evidence-report PATH` to select
+another completed or explicitly partial build report. A frozen dataset is still
+required for the published fallback; GitHub intentionally excludes those data.
+
 ```powershell
 .\.venv\Scripts\python.exe src/build_public_demo.py
 node --check frontend/executive.js

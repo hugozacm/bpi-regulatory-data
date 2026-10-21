@@ -1,5 +1,10 @@
 # Requested-range execution: actual implementation
 
+Reusable modern builds must carry `CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1`, as
+well as matching mapping/source hashes. Legacy pre-gate outputs are not reused;
+they must be rebuilt. This alternate runner still treats partial modern builds
+conservatively; the active public pilot has its own explicit partial-delivery path.
+
 ## Historical financial pilot now implemented: March 2001
 
 `python src/request_dataset.py --start 20010331 --end 20010331` now invokes `build_legacy_quarter.py` after acquiring the official holding-company file. Bank financial data come from the official FDIC API for the same reporting date, rather than unnecessarily downloading an additional SAS bank archive. Use `--offline` to reproduce from existing snapshots. Other historical periods still lack verified mappings and remain explicitly blocked; the March 2001 mapping is never extrapolated.

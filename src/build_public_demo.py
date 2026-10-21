@@ -1,5 +1,6 @@
 """Export an allowlisted public-data-only static demo; never copy source manifests or raw files."""
 import hashlib
+import argparse
 import json
 from pathlib import Path
 
@@ -10,7 +11,24 @@ from serve_frontend import ROOT, latest, snapshot, report
 FIELDS = json.loads((ROOT/'config/public_columns.json').read_text(encoding='utf-8'))
 
 
+def evidence_report(root, supplied=None):
+    if supplied:
+        path=Path(supplied)
+        value=report(path)
+        if value.get('processing_status') not in ('COMPLETED','PARTIAL'):
+            raise ValueError('Evidence must be a completed or explicitly partial build')
+        return value
+    for path in sorted((root/'outputs/dataset').glob('*/release_report.json'),reverse=True):
+        value=report(path)
+        if value.get('processing_status') in ('COMPLETED','PARTIAL') and value.get('quality_policy')=='CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1':
+            return value
+    raise ValueError('Build evidence required; run build_dataset.py or pass --evidence-report PATH')
+
+
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--evidence-report',type=Path,help='Explicit build report; defaults to latest quality-gated build')
+    args=parser.parse_args()
     out = ROOT / 'public_demo/dist'
     out.mkdir(parents=True, exist_ok=True)
     db = snapshot(ROOT)
@@ -27,7 +45,7 @@ def main():
     history_keys = ['status','reported_values','periods_loaded','missing_requested_periods','requested_coverage_complete','limitations']
     status = {'interim': {k:m[k] for k in allowed}, 'history': {k:h[k] for k in history_keys if k in h},
               'scope': {'current_delivery_status':'INCOMPLETE_HISTORICAL_MVP'},
-              'mode':'Public static demo; no live Python backend', 'demo_columns':len(FIELDS)}
+              'mode':'Published snapshot plus optional connected local processor', 'demo_columns':len(FIELDS)}
     # Quarter shards keep each static asset bounded without withholding columns.
     from collections import defaultdict
     shards=defaultdict(list)
@@ -53,9 +71,7 @@ def main():
     (out / 'demo-data.json').write_bytes(encoded)
     (out / 'demo-status.json').write_text(json.dumps(status,separators=(',',':')),encoding='utf-8')
     # Public evidence is explicitly allowlisted: never publish workstation paths or full receipts.
-    pilot = report(ROOT / 'outputs/dataset/20261021T143212Z-06f3654c/release_report.json')
-    if pilot.get('processing_status') != 'COMPLETED' or pilot.get('source_errors'):
-        raise ValueError('Verified pilot evidence is missing or incomplete')
+    pilot = evidence_report(ROOT,args.evidence_report)
     evidence_keys = ['requested_start', 'requested_end', 'processing_status', 'finished_at_utc',
                      'organisation_quarters', 'duplicate_keys', 'unresolved_ownership',
                      'failed_accounting_checks', 'historical_scope_complete', 'approved_final_dataset',
@@ -63,7 +79,7 @@ def main():
     evidence = {k: pilot[k] for k in evidence_keys}
     evidence['sources'] = [{k: s.get(k) for k in ('filename', 'period', 'sha256', 'acquisition')}
                            for s in pilot['sources']]
-    evidence['test_boundary'] = 'Local cached-source processing and simulated Streamlit interactions; not fresh cloud acquisition or financial certification.'
+    evidence['test_boundary'] = 'Saved-source build evidence; not proof of fresh cloud acquisition or financial certification.'
     (out / 'pilot-evidence.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
     guide = {'mode': 'Published snapshot browsing plus an optional connected local-processing pilot for 2023 Q1–2026 Q2.',
              'financial_units': 'USD thousands', 'missing_values': 'Unavailable or withheld; never zero',

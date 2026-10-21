@@ -171,13 +171,20 @@ class PublicAPI:
                 if not kind: return finish('200 OK',self.jobs.get(job))
                 directory=self.jobs.directory(job)
                 if kind in ('result-manifest','result-part'):
+                    query=parse_qs(env.get('QUERY_STRING',''))
+                    allowed={'file'} if kind=='result-manifest' else {'file','index'}
+                    if set(query)-allowed or any(len(v)!=1 for v in query.values()):raise ValueError('Invalid download parameters')
+                    artifact=query.get('file',['result'])[0]
+                    files={'result':'organisation_financials.csv','validation':'validation.csv','validation-input':'validation_input.csv',
+                           'quarantine':'financial_quarantine.csv','periods':'period_coverage.csv','coverage':'measure_coverage.csv'}
+                    if artifact not in files:raise ValueError('Invalid download file')
                     # Bounded transfers avoid restarting a large CSV after a tunnel interruption.
                     # Cache the same formula-safe CSV representation used by the full result route.
-                    cache=directory/'public_download.csv'
+                    cache=directory/('public_download.csv' if artifact=='result' else 'public_download_'+artifact+'.csv')
                     if not cache.exists():
                         temporary=directory/('public_download-'+uuid4().hex+'.tmp')
                         try:
-                            with (directory/'organisation_financials.csv').open(encoding='utf-8',newline='') as source, temporary.open('w',encoding='utf-8-sig',newline='') as target:
+                            with (directory/files[artifact]).open(encoding='utf-8',newline='') as source, temporary.open('w',encoding='utf-8-sig',newline='') as target:
                                 writer=csv.writer(target)
                                 for row in csv.reader(source):writer.writerow([safe_csv(v) for v in row])
                             os.replace(temporary,cache)
@@ -187,8 +194,7 @@ class PublicAPI:
                     if kind=='result-manifest':
                         with cache.open('rb') as handle:digest=hashlib.file_digest(handle,'sha256').hexdigest()
                         return finish('200 OK',{'bytes':size,'chunk_size':chunk_size,'parts':(size+chunk_size-1)//chunk_size,'sha256':digest})
-                    query=parse_qs(env.get('QUERY_STRING',''))
-                    if set(query)!={'index'} or len(query['index'])!=1:raise ValueError('Invalid part')
+                    if 'index' not in query:raise ValueError('Invalid part')
                     index=int(query['index'][0])
                     if not 0<=index<(size+chunk_size-1)//chunk_size:raise ValueError('Invalid part')
                     with cache.open('rb') as handle:

@@ -27,6 +27,7 @@ def completed_modern(root, period):
         if (report.get('requested_start') == report.get('requested_end') == period
             and report.get('processing_status') == 'COMPLETED' and not report.get('source_errors')
             and report.get('mapping_sha256')==mapping_hash
+            and report.get('quality_policy')=='CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1'
             and (path.parent/'organisation_financials.csv').is_file()
             and all(Path(s.get('snapshot','')).is_file() and
                     hashlib.sha256(Path(s['snapshot']).read_bytes()).hexdigest()==s.get('sha256')
@@ -84,7 +85,7 @@ def main(argv=None):
                             raise ValueError('Build failed; inspect local log')
                         report_path=new.pop()
                     report=json.loads(report_path.read_text(encoding='utf-8'))
-                    if report.get('processing_status')!='COMPLETED' or report.get('source_errors'):
+                    if report.get('processing_status')!='COMPLETED' or report.get('source_errors') or report.get('quality_policy')!='CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1':
                         raise ValueError('Source acquisition or processing blocked; inspect build report')
                     item.update(status='COMPLETED_REVIEW_REQUIRED',output_ready=True,
                                 rows=report['organisation_quarters'],

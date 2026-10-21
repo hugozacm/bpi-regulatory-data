@@ -15,7 +15,8 @@ def fixture(root):
     (out/'organisation_financials.csv').write_text('entity_key,report_date,name\nTOP_1,20230331,=unsafe\n')
     report={'requested_start':'20230331','requested_end':'20230331','processing_status':'COMPLETED',
             'source_errors':[],'sources':[],'mapping_sha256':hashlib.sha256(mapping.read_bytes()).hexdigest(),
-            'organisation_quarters':1,'failed_accounting_checks':0,'unresolved_ownership':0}
+            'organisation_quarters':1,'failed_accounting_checks':0,'unresolved_ownership':0,
+            'quality_policy':'CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1'}
     (out/'release_report.json').write_text(json.dumps(report))
     return out
 
@@ -36,6 +37,12 @@ def test_mapping_change_invalidates_reusable_build(tmp_path):
     assert completed_modern(tmp_path,'20230331')
     mapping=tmp_path/'config/expanded_measures.json'
     mapping.write_text(mapping.read_text()+'\n')
+    assert completed_modern(tmp_path,'20230331') is None
+
+
+def test_legacy_build_is_never_reused_without_quality_policy(tmp_path):
+    out=fixture(tmp_path);path=out/'release_report.json'
+    data=json.loads(path.read_text());data.pop('quality_policy');path.write_text(json.dumps(data))
     assert completed_modern(tmp_path,'20230331') is None
 
 

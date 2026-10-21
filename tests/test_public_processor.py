@@ -81,3 +81,9 @@ def test_chunk_download_matches_full_csv_and_rejects_invalid_parts(tmp_path):
     for query in ['index=-1','index=999','index=0&index=1','index=../../secret','path=x']:
         assert request(api,base+'/result-part',query=query)['status'].startswith('422')
     assert request(api,base+'/result-part',origin='https://evil.example',query='index=0')['status'].startswith('403')
+    (directory/'validation.csv').write_text('status,value\nFAIL,1\n',encoding='utf-8')
+    m=json.loads(request(api,base+'/result-manifest',query='file=validation')['body'])
+    data=request(api,base+'/result-part',query='file=validation&index=0')['body']
+    assert hashlib.sha256(data).hexdigest()==m['sha256']
+    assert data==request(api,base+'/validation')['body']
+    assert request(api,base+'/result-manifest',query='file=../../secret')['status'].startswith('422')
