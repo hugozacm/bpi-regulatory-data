@@ -6,7 +6,13 @@ Python tools for preparing public US holding-company and bank regulatory data fo
 
 **Status: REVIEW_REQUIRED.** A draft covers all 12 quarters of 2023–2025. Full-population financial checks have unresolved failures. Complete merger-adjusted histories have **not** been produced. Passing software tests does not certify the financial dataset.
 
-## Current delivery
+## Integrated delivery
+
+Use [DATASET_RELEASE.md](DATASET_RELEASE.md) for the integrated command and honest release status. It now combines dated top-level grouping and 106 schedule fields into one main dataset. The 2023–2025 build contains 51,543 organisation-quarter records, but it is **not final**: maximum history, detailed bank equivalents and independent checks remain incomplete.
+
+The latest extension reaches 2026 Q2: 59,674 organisation-quarter rows across 14 quarters. September 2026 NIC data is visibly incomplete and is not included. The current test suite passes 41 tests with local fixtures. This is still BLOCKED_REVIEW_REQUIRED, not the complete requested final version.
+
+## Earlier panel snapshot (legacy workflow)
 
 A separate [dated highest-parent pilot](TOP_LEVEL_PILOT.md) now implements conservative core grouping for one quarter. It does not replace the panel below or implement all expanded schedules. See its results, commands and limitations before using it.
 
