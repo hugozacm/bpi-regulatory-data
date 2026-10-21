@@ -65,14 +65,14 @@ def classify_events(rows, start, end):
     return result
 
 
-def main():
+def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument('--relationships', type=Path, required=True)
     p.add_argument('--transformations', type=Path, required=True)
     p.add_argument('--banks', type=Path, required=True)
     p.add_argument('--period', default='20241231')
     p.add_argument('--output', type=Path, required=True)
-    a = p.parse_args()
+    a = p.parse_args(argv)
     a.output.mkdir(parents=True, exist_ok=True)
     parents = active_control_parents(zip_rows(a.relationships), a.period)
     banks = [r['data'] for r in json.loads(a.banks.read_text())['data']]
