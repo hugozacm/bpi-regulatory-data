@@ -19,6 +19,7 @@ In a parallel review branch, NIC transformation records produce merger-event cla
 
 | Programme | Implemented responsibility |
 |---|---|
+| `src/run_workflow.py` | One-quarter source acquisition, immutable snapshots, blocked-download reporting, financial run and separate NIC audit; see AUTOMATION.md |
 | `src/bpi_pipeline.py` | Parse a quarter, select Y-9C filers, match FDIC banks, prepare stocks/flows and deposit sums, export checks and provenance |
 | `src/build_panel.py` | Process 12 quarters and assemble intermediate CSV, Parquet and DuckDB tables |
 | `src/history_audit.py` | Read dated NIC control relationships and transformation events; classify events conservatively |
