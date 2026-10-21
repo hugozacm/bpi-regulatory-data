@@ -80,6 +80,8 @@ The bank pipeline uses FDIC's selected financial fields; it does **not** parse r
 
 ## Setup and reproduce
 
+For the new one-quarter download-and-run command, source snapshots, manual NIC fallback and verified automation results, see [AUTOMATION.md](AUTOMATION.md). The full-panel commands below remain unchanged.
+
 The commands below run from the **cloned repository root**, using Python 3.12 and PowerShell.
 
 ```powershell
@@ -122,7 +124,7 @@ The builder retains quarterly validation failures in its reports and continues a
 .\.venv\Scripts\python.exe -m pytest -q --basetemp test_temp_verify
 ```
 
-The last local run passed 15 tests. A fresh clone normally runs 14 and skips the optional real-data integration test because downloaded fixtures are excluded. That test also expects the original `research/fdic_20240930.json` filename alongside the extended Q4 response. Source downloads can be amended, so fixture-dependent checks may change.
+The suite includes the financial tests and download-workflow tests. A fresh clone skips the optional real-data integration test because downloaded fixtures are excluded. That test also expects the original `research/fdic_20240930.json` filename alongside the extended Q4 response. Source downloads can be amended, so fixture-dependent checks may change.
 
 Tests cover income conversion, input dates and uniqueness, missingness, precise integer handling, truncated API responses, caret parsing, dated ownership paths and conservative merger-event classification. They are not independent certification of the complete historical financial dataset.
 
