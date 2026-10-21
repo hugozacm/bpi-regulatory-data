@@ -45,13 +45,21 @@ def load_json(path: Path) -> dict:
 
 st.set_page_config(page_title="BPI Regulatory Data | Research MVP", page_icon="🏦", layout="wide")
 st.markdown("""<style>
-.block-container {max-width: 1160px; padding-top: 2rem;}
-div[data-testid="stMetric"] {background: #f5f7fa; border: 1px solid #e5e9ef;
-  border-radius: 12px; padding: 14px 18px;}
-.stButton > button[kind="primary"] {font-weight: 650;}
+:root {--bpi-navy:#152d4a; --bpi-border:#dfe6ed;}
+.block-container {max-width: 1180px; padding-top: 2.1rem; padding-bottom: 3rem;}
+h1, h2, h3 {color: #152d4a; letter-spacing: -.025em;}
+h1 {font-weight: 720; border-bottom: 2px solid #dfe6ed; padding-bottom: .65rem;}
+div[data-testid="stMetric"] {background: #f6f8fb; border: 1px solid #dfe6ed;
+  border-radius: 8px; padding: 16px 20px;}
+div[data-testid="stMetricLabel"] {color: #4a6076;}
+div[data-testid="stMetricValue"] {color: #152d4a;}
+.stButton > button[kind="primary"] {background: #152d4a; border-color: #152d4a; font-weight: 650;}
+.stButton > button[kind="primary"]:hover {background: #274d74; border-color: #274d74;}
+div[data-testid="stTabs"] button {font-weight: 600;}
 </style>""", unsafe_allow_html=True)
-st.title("Regulatory Data · Research MVP")
-st.caption("Independent research prototype · Not affiliated with or approved by BPI")
+st.title("Regulatory Data | Research Workspace")
+st.caption("BANKING RESEARCH  /  REGULATORY DATA OPERATIONS  /  MVP v1")
+st.caption("Independent research prototype for the BPI use case; not affiliated with or approved by BPI.")
 st.warning("Research draft only. Passing scoped checks does not certify financial completeness or accuracy.")
 releases = directories(RELEASE_ROOT, "mvp_manifest.json")
 builds = directories(DATASET_ROOT, "release_report.json")
@@ -59,7 +67,7 @@ overview_a, overview_b, overview_c = st.columns(3)
 overview_a.metric("Available releases", len(releases))
 overview_b.metric("Upstream builds", len(builds))
 overview_c.metric("Delivery status", "Research draft" if releases else "Not generated")
-st.caption("Workflow: Acquire sources → Build dataset → Validate → Deliver files")
+st.caption("SOURCE ACQUISITION  →  DATASET BUILD  →  QUALITY REVIEW  →  DELIVERY")
 generate, validate, deliver = st.tabs(["01 · Generate dataset", "02 · Validation results", "03 · Download results"])
 
 with generate:
