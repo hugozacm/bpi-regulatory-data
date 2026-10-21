@@ -1,5 +1,7 @@
 # 2023–2025 panel — current delivery
 
+> Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
+
 One-quarter source-download automation was added on 21 October 2026. See [AUTOMATION.md](AUTOMATION.md) for its separate test results and limitations. This did not rebuild or approve the full panel described below.
 
 All twelve quarterly NIC holding-company ZIPs and FDIC selected-field financial responses have been downloaded from their official sources and processed. The default output is a research draft, with exceptions retained.
