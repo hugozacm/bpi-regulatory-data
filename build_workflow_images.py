@@ -50,7 +50,7 @@ for i,(title,lines) in enumerate(steps):
         d.polygon([(800,y+205),(789,y+188),(811,y+188)],fill="#55748d")
 box(d,1450,"PLANNED — not implemented",[
     "Complete population / bank-only groups, agreed definitions and earlier history.",
-    "Verified merger-adjusted financial history; reference date provisionally 31 Dec 2025."
+    "Dated highest-parent grouping; predecessors stay separate before official merger."
 ], "#fff0db")
 d.text((800,1650),"Coverage gap: 40,430 bank-quarter rows with a holder but no selected Y-9C",
        font=font(25,True),fill=INK,anchor="mt")
@@ -102,9 +102,9 @@ table(865,"3. Supporting evidence — separate linked tables",[
 ], [400,850,520],
 "Every financial export is REVIEW_REQUIRED. These examples do not demonstrate financial certification.")
 d.rounded_rectangle((65,1360,1835,1475),18,fill="#fff0db",outline="#d8c29a")
-d.text((90,1380),"PLANNED: merger-adjusted financial history — no such output is currently produced.",
+d.text((90,1380),"NEW TARGET: one dataset with ownership valid at each reporting date.",
        font=font(27,True),fill=NAVY)
-d.text((90,1425),"Needs agreed predecessor scope, economic dates, partial-deal rules and acquisition-quarter income treatment.",
+d.text((90,1425),"No retroactive merger combination. Highest-parent grouping and expanded financial schedules still need work.",
        font=font(24),fill=INK)
 im.save(OUT/"output_tables_example.png")
 print(OUT)
