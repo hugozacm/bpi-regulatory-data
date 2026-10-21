@@ -1,5 +1,7 @@
 # Download-and-run workflow
 
+> Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
+
 Implemented 21 October 2026. This first automation runs **one quarter**, including the preceding quarter when needed for income. It produces quarterly intermediate financials and a separate NIC ownership audit, not the final filtered organisation panel. Existing full-panel commands remain available.
 
 ## Run from the cloned repository root
