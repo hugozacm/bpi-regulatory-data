@@ -23,6 +23,22 @@ Missing or invalid inputs block processing. Put manually downloaded NIC files in
 
 ## Official downloads and limitations
 
+### Browser fallback update — 21 October
+
+A blocked direct request is not proof of a CAPTCHA. Reports now distinguish `DIRECT_REQUEST_BLOCKED`, `HUMAN_VERIFICATION_INDICATED`, `DOWNLOAD_TIMEOUT` and other source failures. Human-verification detection is a response-text heuristic, not a live browser inspection. Check the actual browser page before asking a person to complete a CAPTCHA.
+
+Browser downloading succeeded for 2025 NIC financial files during a separate interactive check; no CAPTCHA was displayed. Another download attempt timed out. This does not establish that every source downloads unattended.
+
+To import browser downloads, save them with exact expected names in a dedicated folder, then run:
+
+```powershell
+.\.venv\Scripts\python.exe src\run_workflow.py --period 20241231 --browser-source-dir C:\BPI-downloads --offline
+```
+
+Explicitly supplied files take precedence over old cache receipts, are validated and snapshotted, and remain untouched in the browser folder. Their original retrieval time is unknown rather than inferred. Missing files in that folder fall back to the normal saved-source lookup. Duplicate names such as `BHCF20241231 (1).ZIP` must first be saved/copied under the exact expected name; ambiguous copies are not automatically selected.
+
+The Python command does **not** launch/control a browser or solve CAPTCHAs. The fallback is an explicit browser-download/import handoff, not fully automatic browser acquisition.
+
 - FDIC uses the existing selected-field API, not raw FFIEC CDR schedules. Response totals, bank identifiers, dates and required field keys are checked.
 - Y-9 uses the existing NIC financial download route. ZIP/caret content, required fields, dates and selected-filer identifiers are checked.
 - NIC structure URLs are discovered only from literal official-page links naming the expected CSV ZIP. No guessed endpoint, CAPTCHA bypass or browser automation is used. JS-only links or a challenge require manual download.
