@@ -8,6 +8,8 @@ Python tools for preparing public US holding-company and bank regulatory data fo
 
 ## Current delivery
 
+A separate [dated highest-parent pilot](TOP_LEVEL_PILOT.md) now implements conservative core grouping for one quarter. It does not replace the panel below or implement all expanded schedules. See its results, commands and limitations before using it.
+
 The last completed local run retained:
 
 | Result | Observations |
