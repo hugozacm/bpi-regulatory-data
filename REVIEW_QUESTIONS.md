@@ -22,7 +22,7 @@ After the methodology discussion, start source-download automation:
 - Check download completeness and expected formats; report failed downloads explicitly.
 - Test with a small quarter first. Keep financial approval and merger-methodology decisions separate from successful automation.
 
-This is planned work, not an implemented feature or a scheduled automatic run.
+Update, 21 October: the initial one-quarter command is implemented and tested; see [AUTOMATION.md](AUTOMATION.md). Live FDIC downloading works; NIC requires the reported manual fallback in the tested environment. Full-panel orchestration and a scheduled automatic run are not implemented by this addition.
 
 ## Bring to the meeting
 
