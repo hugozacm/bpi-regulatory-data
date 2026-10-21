@@ -9,4 +9,6 @@ research/*.yaml
 research/*.json
 research/*.ZIP
 research/*.zip
+research/snapshots/
+research/download_cache/
 test_temp*/
