@@ -55,4 +55,6 @@ Implementation order:
 
 ## Implementation boundary today
 
+Update: an integrated 2023–2025 build with highest-parent grouping and 106 mapped schedule fields is implemented. See [DATASET_RELEASE.md](DATASET_RELEASE.md) for actual results and release blockers. Detailed bank equivalents, full history, reporting eligibility, independent financial validation and complete ownership resolution remain unfinished. The paragraph below records the earlier boundary, not the current feature inventory.
+
 The current code has selected core measures, same-quarter FDIC holder links, a dated NIC audit, a 2023–2025 draft and one-quarter source acquisition/import. It does not yet implement all top-level aggregation rules, bank-only groups, the expanded schedule inventory or the full requested history. This document changes the requirements, not financial outputs.
