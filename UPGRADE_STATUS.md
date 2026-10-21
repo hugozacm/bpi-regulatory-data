@@ -1,5 +1,7 @@
 # Implementation history
 
+> Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
+
 This is a historical change log. [README.md](README.md), [PANEL_STATUS.md](PANEL_STATUS.md) and [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) describe current behaviour.
 
 ## Stage 1 — small-quarter proof of concept
