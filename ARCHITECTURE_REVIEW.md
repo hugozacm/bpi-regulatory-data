@@ -1,5 +1,7 @@
 # Current architecture — stakeholder walkthrough
 
+> Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
+
 For the distinction between one-quarter automation and the filtered full panel, see [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md). Automated refreshes do not automatically refresh the existing full panel.
 
 Status: REVIEW_REQUIRED. This describes the implemented 2023–2025 draft, not a certified or merger-adjusted dataset.
