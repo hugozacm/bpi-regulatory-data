@@ -1,5 +1,11 @@
 # BPI regulatory-data research pipeline
 
+## MVP v1 delivery
+
+The scoped **MVP v1 research draft** is packaged under the agreed assumptions: 2023 Q1–2026 Q2, one main table, explicit missing values and exceptions. It contains 59,639 organisation-quarter rows and 236 columns after 33 incomplete bank-only groups and two conflicting financial rows are kept outside the main table. See [MVP_V1.md](MVP_V1.md) for the deliverable, reproducible packaging command and backlog.
+
+The main cohort has 71,507 passing accounting checks, zero failures and 405,605 checks not testable due to missing inputs. Two pre-quarantine failures remain in the evidence; no source amounts were repaired. The test suite passes 44 tests with local fixtures. These results close the narrowed MVP delivery only: they do not certify the data or satisfy the broader historical/full-field target described below.
+
 > Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
 
 Python tools for preparing public US holding-company and bank regulatory data for stress-test research, using DuckDB, Parquet and CSV. This is a research prototype developed for the BPI use case; it does not imply BPI affiliation or approval.
