@@ -1,5 +1,7 @@
 # Integrated dataset delivery — 21 October 2026
 
+**Narrowed MVP delivery:** [MVP_V1.md](MVP_V1.md) packages this upstream build under subsequently agreed assumptions. It excludes/withholds specified uncertain data and preserves all audit evidence. The broader-target release status below is unchanged; MVP packaging does not turn an uncertified build into an approved full-history database.
+
 **This is a working integrated research build, not the requested final approved version.** Historical breadth, detailed bank equivalents and independent validation remain incomplete. A completed run returns exit 2 and BLOCKED_REVIEW_REQUIRED rather than silently claiming finality.
 
 ## What is implemented
