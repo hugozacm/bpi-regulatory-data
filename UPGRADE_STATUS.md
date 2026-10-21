@@ -18,6 +18,8 @@ Added dated NIC control-chain ownership review, raw-bank and coverage tables, ex
 
 ## Still outstanding
 
+One-quarter download automation was added on 21 October 2026; see [AUTOMATION.md](AUTOMATION.md). Saved-source processing and live FDIC download were verified. Scripted NIC requests remain blocked and require the documented manual fallback.
+
 - Complete institution-type screening and coverage of holder groups without Y-9C observations.
 - Independent reference-filing reconciliation and resolution of material ownership/value exceptions.
 - Agreed comparable financial/deposit definitions and restatement handling.
