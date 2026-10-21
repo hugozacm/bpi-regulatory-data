@@ -1,5 +1,7 @@
 # What the workflow does now
 
+**MVP v1 handoff:** [MVP_V1.md](MVP_V1.md) is the current scoped delivery. `release_mvp.py` freezes the integrated build, withholds uncertain quarter flows, quarantines financial conflicts, excludes incomplete bank-only groups, runs the packaged-cohort checks and creates the delivery archive. Earlier broader-target blockers below remain backlog/limitations; they are not claimed solved.
+
 **Implementation update:** [DATASET_RELEASE.md](DATASET_RELEASE.md) describes the new integrated `build_dataset.py` command. It supersedes the two-path description below for the new dataset; older tools/results remain documented for audit. The integrated build is still release-blocked, not a final approved dataset.
 
 > Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
