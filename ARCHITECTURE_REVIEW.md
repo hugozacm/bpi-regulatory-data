@@ -1,5 +1,7 @@
 # Current architecture — stakeholder walkthrough
 
+For the distinction between one-quarter automation and the filtered full panel, see [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md). Automated refreshes do not automatically refresh the existing full panel.
+
 Status: REVIEW_REQUIRED. This describes the implemented 2023–2025 draft, not a certified or merger-adjusted dataset.
 
 ## Simple workflow
