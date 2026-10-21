@@ -1,5 +1,7 @@
 # BPI regulatory-data research pipeline
 
+> Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
+
 Python tools for preparing public US holding-company and bank regulatory data for stress-test research, using DuckDB, Parquet and CSV. This is a research prototype developed for the BPI use case; it does not imply BPI affiliation or approval.
 
 **Status: REVIEW_REQUIRED.** A draft covers all 12 quarters of 2023–2025. Full-population financial checks have unresolved failures. Complete merger-adjusted histories have **not** been produced. Passing software tests does not certify the financial dataset.
