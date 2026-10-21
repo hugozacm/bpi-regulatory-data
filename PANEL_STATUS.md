@@ -1,5 +1,7 @@
 # 2023–2025 panel — current delivery
 
+One-quarter source-download automation was added on 21 October 2026. See [AUTOMATION.md](AUTOMATION.md) for its separate test results and limitations. This did not rebuild or approve the full panel described below.
+
 All twelve quarterly NIC holding-company ZIPs and FDIC selected-field financial responses have been downloaded from their official sources and processed. The default output is a research draft, with exceptions retained.
 
 ## Results
