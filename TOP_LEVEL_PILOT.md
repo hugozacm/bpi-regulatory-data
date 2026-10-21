@@ -1,5 +1,7 @@
 # Dated top-level grouping — first implementation
 
+The integrated successor is now [DATASET_RELEASE.md](DATASET_RELEASE.md). This file records the earlier standalone pilot and its limitations; use `build_dataset.py` for expanded multi-quarter output.
+
 Implemented 21 October 2026. This is an isolated pilot, not a replacement for the existing panel or a claim that all new requirements are complete.
 
 Run from the repository root with the existing source files:
