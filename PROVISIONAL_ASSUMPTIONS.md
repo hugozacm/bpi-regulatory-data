@@ -1,21 +1,21 @@
-# Provisional assumptions — confirm before research release
+# Decisions and remaining working assumptions
 
-These are working choices, not stakeholder-approved methodology. See [REVIEW_QUESTIONS.md](REVIEW_QUESTIONS.md) for the meeting checklist.
+The authoritative target is now [REQUIREMENTS.md](REQUIREMENTS.md), based on Hugo's answers on 21 October 2026.
 
-| Topic | Current implementation / assumption | Decision still needed |
-|---|---|---|
-| Period | Draft covers 2023–2025, all 12 quarters | Minimum start date; acceptable historical breaks |
-| Holding companies | Populated Y-9C assets identify observed filers; internal label consolidated_BHC | Verified BHC/SLHC/IHC and foreign-owned scope |
-| Standalone banks | FDIC blank/zero/self holder, then no dated NIC control parent found | Independent institution-type and standalone verification |
-| Holders without Y-9C | Banks retained in raw data, excluded from the main table | Whether/how to publish bank-only group aggregates |
-| Core consolidation | Use consolidated Y-9C; do not add matched subsidiary core balances | Review remaining overlaps and out-of-scope entities |
-| Deposits | Separate matched-bank sums: total/domestic/foreign/domestic interest and noninterest | Required additional categories and consolidation treatment |
-| Loans | BHC net-unearned and bank net-allowance measures stay separate | Comparable definition or explicitly separate series |
-| Stocks and flows | Quarter-end stocks; Q1 YTD, later quarters adjacent YTD differences | Restatements, reporting-perimeter changes and merger-quarter income |
-| Missing values | Preserve nulls; never infer missing deposit detail as zero | Acceptance thresholds and remediation |
-| Merger reference | Provisionally 31 December 2025 | Confirm reference population and full versus partial deal rules |
-| Merger adjustment | Events and quarter flags only; no adjusted financial history | Verified lineage, economic dates, accounting and eliminations |
-| Source vintage | Saved current publications with dated history, not vintage archives | Snapshot/amendment policy for reproducible research |
-| Approval | Every output remains REVIEW_REQUIRED | Benchmark, tolerance, reviewer and release-blocking checks |
+## Confirmed direction
 
-No absence of an ownership record proves independence. No transformation code alone proves a fully additive merger. No successful programme run or passing software test certifies the financial panel.
+One main organisation-quarter dataset; highest-level holding-company grouping; banks separate before the official merger date; no retrospective combination; maximum reliable historical coverage through the latest available quarter; expanded HI, HI-A and HI-B financial scope.
+
+The previous 31 December 2025 merger-reference assumption is withdrawn.
+
+## Assumptions still requiring verification, not another questionnaire
+
+- HI-B is provisionally interpreted as Part I items 1–9 with subitems and charge-off/recovery columns.
+- Official filings are the initial validation benchmark; no acceptance tolerance or financial sign-off is assumed.
+- Foreign ultimate parents, mixed reporting perimeters, ambiguous control chains, partial acquisitions and merger-quarter income need evidenced handling and explicit flags.
+- The earliest/latest downloadable quarters, historical identifier crosswalk coverage and historical schedule mappings must be verified rather than inferred.
+- Bank-only aggregates are labelled as such, not presented as consolidated holder accounts.
+- Missing values and reporting-threshold exclusions remain distinct from zero.
+- No missing NIC edge alone proves independence.
+
+The current pipeline remains REVIEW_REQUIRED. See REQUIREMENTS.md for the implementation gap and delivery sequence.
