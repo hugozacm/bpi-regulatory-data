@@ -44,10 +44,23 @@ def load_json(path: Path) -> dict:
 
 
 st.set_page_config(page_title="BPI Regulatory Data | Research MVP", page_icon="🏦", layout="wide")
+st.markdown("""<style>
+.block-container {max-width: 1160px; padding-top: 2rem;}
+div[data-testid="stMetric"] {background: #f5f7fa; border: 1px solid #e5e9ef;
+  border-radius: 12px; padding: 14px 18px;}
+.stButton > button[kind="primary"] {font-weight: 650;}
+</style>""", unsafe_allow_html=True)
 st.title("Regulatory Data · Research MVP")
 st.caption("Independent research prototype · Not affiliated with or approved by BPI")
 st.warning("Research draft only. Passing scoped checks does not certify financial completeness or accuracy.")
-generate, validate, deliver = st.tabs(["Generate dataset", "Validation results", "Download results"])
+releases = directories(RELEASE_ROOT, "mvp_manifest.json")
+builds = directories(DATASET_ROOT, "release_report.json")
+overview_a, overview_b, overview_c = st.columns(3)
+overview_a.metric("Available releases", len(releases))
+overview_b.metric("Upstream builds", len(builds))
+overview_c.metric("Delivery status", "Research draft" if releases else "Not generated")
+st.caption("Workflow: Acquire sources → Build dataset → Validate → Deliver files")
+generate, validate, deliver = st.tabs(["01 · Generate dataset", "02 · Validation results", "03 · Download results"])
 
 with generate:
     st.subheader("Build the regulatory dataset")
@@ -111,7 +124,9 @@ with validate:
         selected = st.selectbox("Research draft release", releases, key="validation_release",
                                 format_func=lambda p: p.name)
         manifest = load_json(selected / "mvp_manifest.json")
-        st.json(manifest)
+        st.caption("Release manifest · full audit details available below")
+        with st.expander("View complete release manifest"):
+            st.json(manifest)
         report = selected / "VALIDATION_REPORT.md"
         if report.is_file():
             st.markdown(report.read_text(encoding="utf-8"))
@@ -130,6 +145,8 @@ with deliver:
         selected = st.selectbox("Packaged release", releases, key="download_release",
                                 format_func=lambda p: p.name)
         st.info("Financial figures are in USD thousands. Blank values must not be interpreted as zero.")
+        st.markdown("**Deliverable package**")
+        st.caption("Share the dictionary, validation report and exceptions alongside the dataset.")
         for filename, mime in (
             ("organisation_financials.csv", "text/csv"),
             ("organisation_financials.parquet", "application/octet-stream"),
