@@ -126,3 +126,38 @@ def test_invalid_structure_columns_are_rejected(tmp_path):
         archive.writestr('relationships.csv', 'wrong,columns\n1,2\n')
     with pytest.raises(ValueError, match='missing required'):
         workflow.validate_source(path, 'CSV_RELATIONSHIPS.zip')
+
+
+def test_bare_403_does_not_claim_captcha():
+    import requests
+    response = requests.Response()
+    response.status_code = 403
+    response._content = b'Forbidden'
+    with pytest.raises(requests.HTTPError) as caught:
+        workflow.check_access(response)
+    assert workflow.failure_reason(caught.value) == 'DIRECT_REQUEST_BLOCKED'
+    assert workflow.failure_reason(requests.Timeout()) == 'DOWNLOAD_TIMEOUT'
+
+
+def test_explicit_human_verification_is_reported():
+    response = SimpleNamespace(content=b'<html>Verify you are human</html>')
+    with pytest.raises(workflow.SourceAccessError) as caught:
+        workflow.check_access(response)
+    assert workflow.failure_reason(caught.value) == 'HUMAN_VERIFICATION_INDICATED'
+
+
+def test_explicit_browser_import_overrides_cache_without_deleting_download(tmp_path):
+    filename = 'fdic_extended_20241231.json'
+    original = workflow.prepare_source(tmp_path, Client(fdic_bytes()), filename, 'fdic', '20241231')
+    folder = tmp_path / 'browser'
+    folder.mkdir()
+    changed = fdic_bytes().replace(b'Test fixture', b'Browser fixture')
+    downloaded = folder / filename
+    downloaded.write_bytes(changed)
+    imported = workflow.prepare_source(tmp_path, Client(b''), filename, 'fdic', '20241231', offline=True, browser_dir=folder)
+    assert imported['acquisition'] == 'IMPORTED_BROWSER_FILE'
+    assert imported['retrieved_at_utc'] is None
+    assert downloaded.read_bytes() == changed
+    assert Path(original['snapshot']).exists()
+    reused = workflow.prepare_source(tmp_path, Client(b''), filename, 'fdic', '20241231', offline=True)
+    assert reused['sha256'] == imported['sha256']
