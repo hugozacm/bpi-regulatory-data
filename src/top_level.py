@@ -80,8 +80,9 @@ def build_groups(banks, holders, parents, period, prior_banks=(), prior_holders=
     result = []
     for top, members in sorted(groups.items()):
         holder = by_holder.get(top)
-        nested_banks = any(parent in {as_int(b.get('RSSDID')) for b in members}
-                           for b in members for parent in parents.get(as_int(b.get('RSSDID')), ()))
+        from history_audit import ancestors
+        member_ids = {as_int(b.get('RSSDID')) for b in members}
+        nested_banks = any(ancestors(as_int(b.get('RSSDID')), parents) & member_ids for b in members)
         bank_only = holder is None
         row = {'entity_key': f'TOP_RSSD_{top}', 'top_rssd': top, 'report_date': period,
                'basis': 'CONSOLIDATED_Y9C' if holder else 'BANK_ONLY_AGGREGATE',
