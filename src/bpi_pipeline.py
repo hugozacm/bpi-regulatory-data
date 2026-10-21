@@ -74,7 +74,7 @@ def optional_prior_hash(path, period):
     return '' if period[4:6] == '03' else sha256(path)
 
 
-def load_y9(path: Path) -> list[dict]:
+def load_y9(path: Path, fields=None) -> list[dict]:
     with zipfile.ZipFile(path) as archive:
         members = [name for name in archive.namelist() if name.lower().endswith(".txt")]
         if len(members) != 1:
@@ -96,7 +96,7 @@ def load_y9(path: Path) -> list[dict]:
                 # BHCK2170 is the conservative, observable Y-9C inclusion test.
                 if row.get("BHCK2170") in (None, ""):
                     continue
-                rows.append({field: row.get(field, "") for field in Y9_FIELDS})
+                rows.append({field: row.get(field, "") for field in (fields or Y9_FIELDS)})
             return rows
 
 
