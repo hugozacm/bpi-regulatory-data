@@ -36,6 +36,35 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
+class SourceAccessError(ValueError):
+    def __init__(self, reason, message):
+        super().__init__(message)
+        self.reason = reason
+
+
+def check_access(response):
+    # A bare HTTP 403 is not evidence that a human CAPTCHA is displayed.
+    body = response.content[:200000].decode('utf-8', errors='ignore').lower()
+    if not response.content.startswith(b'PK') and any(marker in body for marker in (
+        'verify you are human', 'complete the captcha', 'solve the captcha',
+        'g-recaptcha', 'h-captcha', 'cf-turnstile',
+    )):
+        raise SourceAccessError('HUMAN_VERIFICATION_INDICATED',
+                                'Response indicates human verification; inspect the official page in a browser.')
+    response.raise_for_status()
+
+
+def failure_reason(error):
+    if isinstance(error, SourceAccessError):
+        return error.reason
+    if isinstance(error, requests.Timeout):
+        return 'DOWNLOAD_TIMEOUT'
+    if isinstance(error, requests.HTTPError):
+        status = getattr(error.response, 'status_code', None)
+        return 'DIRECT_REQUEST_BLOCKED' if status in (401, 403) else 'HTTP_FAILURE'
+    return 'SOURCE_UNAVAILABLE_OR_INVALID'
+
+
 def previous_quarter(period):
     date = datetime.strptime(period, '%Y%m%d')
     from calendar import monthrange
@@ -61,7 +90,7 @@ def session():
 def discover_structure_url(client, filename):
     """Use only a literal published URL; never guess the structure download route."""
     response = client.get(NIC_STRUCTURE_PAGE, timeout=(15, 45))
-    response.raise_for_status()
+    check_access(response)
     html = unescape(response.text)
     for candidate in re.findall(r'''["']([^"'<>\s]+)["']''', html):
         if filename.lower() not in candidate.lower():
@@ -98,10 +127,14 @@ def validate_source(path, kind, period=None):
                     raise ValueError('Structure CSV missing required columns or records')
 
 
-def prepare_source(root, client, filename, kind, period=None, offline=False, refresh=False):
+def prepare_source(root, client, filename, kind, period=None, offline=False, refresh=False, browser_dir=None):
     """Never modify legacy research files. Immutable hash-addressed copies are inputs."""
     research = root / 'research'
     source = research / filename
+    browser_source = Path(browser_dir) / filename if browser_dir else None
+    browser_import = browser_source is not None and browser_source.is_file()
+    if browser_import:
+        source = browser_source
     record = {'filename': filename, 'kind': kind, 'period': period, 'observed_at_utc': utc_now(),
               'retrieved_at_utc': None, 'source_url': None, 'request_parameters': None}
     if kind == 'fdic':
@@ -112,15 +145,15 @@ def prepare_source(root, client, filename, kind, period=None, offline=False, ref
         record['source_page'] = NIC_STRUCTURE_PAGE
     # Prior automated downloads are discoverable without replacing browser snapshots.
     receipt = research / 'download_cache' / (filename + '.json')
-    if receipt.exists() and not refresh:
+    if receipt.exists() and not refresh and not browser_import:
         cached = json.loads(receipt.read_text(encoding='utf-8'))
         source = research / 'snapshots' / cached['sha256'] / filename
         if sha256(source) != cached['sha256']:
             raise ValueError(f'Cached snapshot hash mismatch: {filename}')
         record.update(source_url=cached.get('source_url'), retrieved_at_utc=cached.get('retrieved_at_utc'))
-    if source.exists() and not refresh:
+    if source.exists() and (not refresh or browser_import):
         validate_source(source, kind, period)
-        record['acquisition'] = 'REUSED_LOCAL'
+        record['acquisition'] = 'IMPORTED_BROWSER_FILE' if browser_import else 'REUSED_LOCAL'
         data_path = source
     else:
         if offline:
@@ -128,7 +161,7 @@ def prepare_source(root, client, filename, kind, period=None, offline=False, ref
         if kind in STRUCTURE_FIELDS:
             record['source_url'] = discover_structure_url(client, filename)
         response = client.get(record['source_url'], params=record['request_parameters'], timeout=(15, 45))
-        response.raise_for_status()
+        check_access(response)
         if kind != 'fdic' and not response.content.startswith(b'PK'):
             raise ValueError('Expected ZIP, received non-ZIP (possibly a browser challenge)')
         staging = research / 'download_cache'
@@ -152,8 +185,9 @@ def prepare_source(root, client, filename, kind, period=None, offline=False, ref
         with snapshot.open('xb') as target, data_path.open('rb') as origin:
             shutil.copyfileobj(origin, target)
     record.update(sha256=digest, snapshot=str(snapshot.resolve()), status='READY')
-    if record['acquisition'] == 'DOWNLOADED':
-        data_path.unlink()
+    if record['acquisition'] in ('DOWNLOADED', 'IMPORTED_BROWSER_FILE'):
+        if record['acquisition'] == 'DOWNLOADED':
+            data_path.unlink()
         receipt.parent.mkdir(parents=True, exist_ok=True)
         receipt.write_text(json.dumps(record, indent=2), encoding='utf-8')
     return record
@@ -166,6 +200,8 @@ def main(argv=None):
     parser.add_argument('--offline', action='store_true', help='Only use validated saved sources')
     parser.add_argument('--refresh', action='store_true', help='Fetch new snapshots; preserve existing files')
     parser.add_argument('--download-only', action='store_true')
+    parser.add_argument('--browser-source-dir', type=Path,
+                        help='Import explicitly supplied browser downloads with exact expected filenames; never solves CAPTCHAs')
     args = parser.parse_args(argv)
     if args.offline and args.refresh:
         parser.error('--offline and --refresh are mutually exclusive')
@@ -184,10 +220,12 @@ def main(argv=None):
     with session() as client:
         for filename, kind, period in specs:
             try:
-                record = prepare_source(root, client, filename, kind, period, args.offline, args.refresh)
+                extra = {'browser_dir': args.browser_source_dir} if args.browser_source_dir else {}
+                record = prepare_source(root, client, filename, kind, period, args.offline, args.refresh, **extra)
             except (requests.RequestException, ValueError, OSError, KeyError, zipfile.BadZipFile) as error:
                 record = {'filename': filename, 'status': 'BLOCKED', 'error': str(error)[:500],
-                          'manual_step': f'Download {filename} from the official source into {root / "research"}, then rerun without --refresh.',
+                          'failure_reason': failure_reason(error),
+                          'manual_step': f'Open the official source in a browser and download {filename}. Only complete human verification if actually shown. Save the exact filename and rerun with --browser-source-dir pointing to that folder (or put it in research/ and rerun without --refresh if there is no cache receipt).',
                           'source_page': NIC_FINANCIAL_PAGE if kind == 'y9' else NIC_STRUCTURE_PAGE if kind in STRUCTURE_FIELDS else FDIC_API}
             report['sources'].append(record)
             print(filename, record['status'], flush=True)
@@ -217,7 +255,7 @@ def main(argv=None):
     for row in report['sources']:
         lines.append(f'- {row["filename"]}: {row["status"]}')
         if row['status'] != 'READY':
-            lines.extend([f'  - {row["error"]}', f'  - {row["manual_step"]}'])
+            lines.extend([f'  - Reason: {row["failure_reason"]}', f'  - {row["error"]}', f'  - {row["manual_step"]}'])
     if 'financial_summary' in report:
         lines.extend(['', f'Financial checks passed: {report["financial_summary"]["validation_pass"]}',
                       'Inspect the quarter folder validation.csv and ownership_review/history_summary.json.'])
