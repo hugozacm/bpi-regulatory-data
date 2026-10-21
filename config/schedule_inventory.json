@@ -1,0 +1,16 @@
+{
+  "status": "PARTIAL_REFERENCE_INVENTORY_NOT_ACTIVE_PIPELINE_MAPPING",
+  "reference_form_period": "20260630",
+  "source": "https://www.federalreserve.gov/apps/reportingforms/Download/DownloadAttachment?guid=649467b7-df0a-4b1a-8f75-9a75c70962b5",
+  "historical_validity": "Not established. Do not back-apply the June 2026 codes without period-specific checks.",
+  "fields": [
+    {"schedule":"HI","item":"1.h","field":"BHCK4107","name":"Total interest income","type":"YTD_flow"},
+    {"schedule":"HI","item":"2.f","field":"BHCK4073","name":"Total interest expense","type":"YTD_flow"},
+    {"schedule":"HI","item":"3","field":"BHCK4074","name":"Net interest income","type":"YTD_flow"},
+    {"schedule":"HI","item":"4","field":"BHCKJJ33","name":"Provision for credit losses","type":"YTD_flow"},
+    {"schedule":"HI","item":"5.c","field":"BHCKA220","name":"Trading revenue","type":"YTD_flow","note":"Reporting thresholds apply; this is not the complete trading memo inventory"},
+    {"schedule":"HI-A","item":"12","field":"BHCKB511","name":"Other comprehensive income","type":"YTD_flow"},
+    {"schedule":"HI-A","item":"15","field":"BHCT3210","name":"Total holding company equity capital end of current period","type":"stock","note":"BHCT prefix is intentional; do not substitute BHCK3210 without verifying scope"}
+  ],
+  "pending": ["HI component items and remaining totals", "All trading-revenue memo fields and reporting thresholds", "HI realised gains 6.a and 6.b", "HI-B Part I items 1-9 including columns and subitems", "Equivalent Call Report fields", "Historical mapping intervals"]
+}
