@@ -1,5 +1,7 @@
 # Current architecture — stakeholder walkthrough
 
+**New integrated entry point:** `src/build_dataset.py` uses snapshot acquisition, `top_level.py` grouping, the active `config/expanded_measures.json`, and combined financial/coverage/validation exports. See [DATASET_RELEASE.md](DATASET_RELEASE.md). Earlier stage descriptions below are retained but are not the complete integrated architecture.
+
 > Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
 
 For the distinction between one-quarter automation and the filtered full panel, see [CURRENT_WORKFLOW.md](CURRENT_WORKFLOW.md). Automated refreshes do not automatically refresh the existing full panel.
