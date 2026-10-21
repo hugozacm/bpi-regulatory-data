@@ -1,4 +1,6 @@
 # What the workflow does now
+
+> Target updated 21 October: [REQUIREMENTS.md](REQUIREMENTS.md) supersedes earlier merger-reference proposals. Use dated highest-parent grouping; keep predecessors separate before the official merger date. No retroactive "always merged" history is requested. Existing implementation/results below are not yet the complete new target.
 Updated 21 October 2026. Checked against the current code; this documentation update does not rerun or approve the data.
 
 ## Two paths, not one fully integrated command
