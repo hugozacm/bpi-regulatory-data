@@ -1,5 +1,7 @@
 # Agreed direction — 21 October 2026
 
+**Subsequent MVP scope decision:** Hugo authorised closing a research-draft MVP with 2023 Q1–2026 Q2 coverage, explicit missing fields, dated grouping, unresolved cases excluded and uncertain flows withheld. [MVP_V1.md](MVP_V1.md) defines that delivery and backlog. The broader goals below remain aspirational, not completed acceptance requirements for MVP v1.
+
 This records Hugo's instructions in this chat. It is not a claim of separate Laura/BPI approval, complete implementation or financial certification. It supersedes earlier proposed fixed-reference, retroactively combined merger histories.
 
 ## Output and grouping
