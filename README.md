@@ -26,6 +26,10 @@ These are results from the saved local source snapshot, not guarantees for a fre
 
 ## Workflow
 
+**There are two execution paths:** the new one-quarter automation prepares snapshots and writes a separate ownership audit; the existing full-panel scripts combine 2023–2025 and apply the NIC ownership filter. They are not yet one integrated command. Read [what the workflow does now](CURRENT_WORKFLOW.md) for the current sequence and output boundaries.
+
+The steps below describe the existing full-panel path:
+
 1. Read each quarter's official NIC holding-company ZIP and obtain FDIC financials.
 2. Identify Y-9C observations through populated `BHCK2170`; validate source dates, record identifiers and FDIC response completeness.
 3. Retain all observed Y-9C filers in panel mode. Match banks to holders using the same quarter's FDIC `RSSDHCR`.
