@@ -21,7 +21,7 @@
     "columns": 236,
     "delivery_format": "CSV plus dictionary, provenance and validation",
     "partial_delivery": true,
-    "public_jobs": "Connected public pilot; one active and one queued job; 10 submissions per UTC day; bounded requests",
+    "public_jobs": "Connected public pilot; one active and one queued job; 50 submissions per UTC day shared across visitors; downloads do not count; bounded requests",
     "acceptance": "Website period selection triggers acquisition/build/status/download, or accepted temporary local execution and publication",
     "extra_stress_models_and_ratios": false,
     "approval": "Hugo"

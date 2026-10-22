@@ -20,6 +20,7 @@ from serve_frontend import ROOT, dataset, safe_csv
 from output_dictionary import build_dictionary
 
 SITE='https://bpi-regulatory-research-hugo.amusedvine18.chatgpt.site'
+DAILY_JOB_LIMIT=50
 TERMINAL={'COMPLETED_REVIEW_REQUIRED','COMPLETED_PARTIAL_REVIEW_REQUIRED','BLOCKED','FAILED','TIMED_OUT','INTERRUPTED'}
 
 
@@ -61,7 +62,7 @@ class PublicJobs:
             if time.monotonic()-self.last_started<60: raise RuntimeError('Please wait 60 seconds between submissions.')
             today=utc()[:10]
             daily=sum(json.loads(p.read_text(encoding='utf-8')).get('created_at_utc','').startswith(today) for p in self.folder.glob('*.json') if len(p.stem)==32)
-            if daily>=10: raise RuntimeError('Daily pilot limit reached (10 jobs). Try again tomorrow.')
+            if daily>=DAILY_JOB_LIMIT: raise RuntimeError(f'Daily pilot limit reached ({DAILY_JOB_LIMIT} jobs). Try again tomorrow.')
             if shutil.disk_usage(self.root).free<2*1024**3: raise RuntimeError('Processor disk space is low; operator action required.')
             record={'id':uuid4().hex,'start':start,'end':end,'status':'QUEUED','message':'Waiting for the single local processing slot',
                     'created_at_utc':utc(),'result_ready':False,'financially_certified':False,'events':[{'stage':'QUEUED','at':utc()}]}
@@ -158,7 +159,7 @@ class PublicAPI:
         if method=='OPTIONS': return finish('204 No Content',b'')
         try:
             if method=='GET' and path=='/pilot/health':
-                return finish('200 OK',{'status':'ok','mode':'TEMPORARY_LOCAL_PILOT','active_job':bool(self.jobs.active),'max_quarters':14,'supported_start':'20230331','supported_end':'20260630'})
+                return finish('200 OK',{'status':'ok','mode':'TEMPORARY_LOCAL_PILOT','active_job':bool(self.jobs.active),'daily_job_limit':DAILY_JOB_LIMIT,'max_quarters':14,'supported_start':'20230331','supported_end':'20260630'})
             if method=='POST' and path=='/pilot/jobs':
                 if origin not in self.origins: return finish('403 Forbidden',{'error':'Submit from the configured frontend'})
                 length=int(env.get('CONTENT_LENGTH') or 0)

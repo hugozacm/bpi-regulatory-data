@@ -57,6 +57,29 @@ def test_restart_marks_job_interrupted(tmp_path):
     assert restarted.get(job['id'])['status']=='INTERRUPTED'
 
 
+def test_daily_limit_accepts_fiftieth_then_blocks_and_survives_restart(tmp_path,monkeypatch):
+    from public_processor import utc
+    jobs=PublicJobs(root(tmp_path))
+    for index in range(49):
+        jobs.save({'id':f'{index:032x}','status':'COMPLETED_REVIEW_REQUIRED','created_at_utc':utc()})
+    monkeypatch.setattr('public_processor.threading.Thread.start',lambda self:None)
+    accepted=jobs.submit({'start':'20240331','end':'20240331'})
+    assert accepted['status']=='QUEUED'
+    restarted=PublicJobs(tmp_path)
+    with pytest.raises(RuntimeError,match='50 jobs'):
+        restarted.submit({'start':'20240331','end':'20240331'})
+    api=PublicAPI(tmp_path,jobs=restarted)
+    assert json.loads(request(api,'/pilot/health')['body'])['daily_job_limit']==50
+
+
+def test_daily_limit_excludes_previous_utc_day(tmp_path,monkeypatch):
+    jobs=PublicJobs(root(tmp_path))
+    for index in range(50):
+        jobs.save({'id':f'{index:032x}','status':'COMPLETED_REVIEW_REQUIRED','created_at_utc':'2000-01-01T00:00:00+00:00'})
+    monkeypatch.setattr('public_processor.threading.Thread.start',lambda self:None)
+    assert jobs.submit({'start':'20240331','end':'20240331'})['status']=='QUEUED'
+
+
 def test_results_unavailable_before_completion(tmp_path):
     jobs=PublicJobs(root(tmp_path));job={'id':'a'*32,'status':'BLOCKED','result_ready':False};jobs.save(job)
     api=PublicAPI(tmp_path,jobs=jobs)

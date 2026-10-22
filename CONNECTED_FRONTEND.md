@@ -57,7 +57,7 @@ Logs: `outputs/pilot_runtime/`. Private job records/logs: `outputs/public_jobs/`
 
 ## Limits and security
 
-One active build, one waiting slot; 60-second submission interval, 10 jobs per UTC day, maximum 14 quarters, 30-minute build limit and minimum disk-space check. Requests use fixed argument arrays, never user-selected commands or filesystem paths.
+One active build, one waiting slot; 60-second submission interval, 50 new jobs per UTC day (shared across visitors), maximum 14 quarters, 30-minute build limit and minimum disk-space check. Downloads and status checks do not consume this allowance. The health endpoint exposes `daily_job_limit`. Requests use fixed argument arrays, never user-selected commands or filesystem paths.
 
 CORS/origin checks are not authentication. Anonymous public requests are intentional; limits are shared by everyone. Operator routes, raw archives, private logs and arbitrary files are not served. Interrupted work is marked INTERRUPTED on restart. No browser credentials are required.
 
