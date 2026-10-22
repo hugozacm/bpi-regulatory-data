@@ -2,6 +2,8 @@
 
 The existing public [Site](https://bpi-regulatory-research-hugo.amusedvine18.chatgpt.site/) is the active interface. It has Workspace, Fed scenarios and Methodology views. Choose quarters, prepare a dataset, and download all 236 columns. There are no institution/basis/column filters.
 
+The data-journey card groups actual API stages into Official filings → Group institutions → Check the data → Download. It does not simulate percentages or elapsed-time savings. Completed results reveal the actual row count, column count and delivered-quarter count; unknown counts remain a dash, and partial results are labelled. A preparation disclosure describes the existing quality policy only for policy-marked results. Financial exceptions, untestable checks and legacy warnings remain visible. The subtle reveal/pulse animations respect reduced-motion preferences. This presentation adds no data sources, financial calculations or API jobs.
+
 The interface uses BPI's official website logo reference, observed purple/orange palette, Roboto body text and Barlow Semi Condensed headings. It is explicitly a classroom prototype, not an official BPI service or endorsement. Logo and fonts are external dependencies with font fallbacks.
 
 ## Source and publication

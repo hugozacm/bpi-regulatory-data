@@ -28,6 +28,16 @@ function harness(status){
  assert.equal(offline.elements.get('#resume-status').hidden,false);
  const health=harness(200);vm.runInContext('jobActive=true;',health.context);await vm.runInContext('health()',health.context);
  assert.equal(health.elements.get('#build').disabled,true);
+ const presentation=harness(200);
+ const actual=vm.runInContext("resultHighlights({status:'COMPLETED_PARTIAL_REVIEW_REQUIRED',rows:8473,columns:236,delivered_periods:['20250331','20250630']})",presentation.context);
+ assert.match(actual,/8,473/);assert.match(actual,/>236</);assert.match(actual,/>2</);assert.match(actual,/PARTIAL DATASET PREPARED/);
+ const unknown=vm.runInContext("resultHighlights({status:'COMPLETED_REVIEW_REQUIRED'})",presentation.context);
+ assert(!unknown.includes('>236<'),'Missing counts are not invented');assert(unknown.includes('>—<'));
+ assert(!vm.runInContext("preparationNotes({})",presentation.context).includes('Preparation applied'),'Legacy results do not claim the current policy');
+ const grouping=vm.runInContext("journeySteps({status:'PROCESSING'})",presentation.context);
+ assert.equal((grouping.match(/journey-item done/g)||[]).length,1);assert.equal((grouping.match(/aria-current=/g)||[]).length,1);
+ const completed=vm.runInContext("journeySteps({status:'COMPLETED_REVIEW_REQUIRED',result_ready:true})",presentation.context);
+ assert.equal((completed.match(/journey-item done/g)||[]).length,4);
  const discovery=harness(200);
  discovery.context.localStorage={setItem(){}};discovery.context.sessionStorage={setItem(){}};
  discovery.context.fetch=async url=>({ok:true,json:async()=>url==='processor-config.json'?{automatic_discovery:true,api_origin:'https://new.trycloudflare.com'}:{status:'ok',mode:'TEMPORARY_LOCAL_PILOT'}});
