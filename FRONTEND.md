@@ -35,3 +35,9 @@ Official 2026 Fed macro charts are a separate context view, not a bank stress-lo
 `frontend/index.html`, `app.js`, `style.css`, `backend.js`, `processor.js` and `fed.js` support earlier/local interfaces. They are not loaded by the public executive interface. `src/serve_frontend.py` serves the read-only localhost explorer on port 8765; do not expose it publicly.
 
 The operator API on port 8767, Streamlit interface, Lovable experiment, Render notes and disabled-by-default GitHub Actions workflow are not the current public execution path. Their documents are historical/alternate guides, not the live feature inventory.
+
+## Automatic connection discovery — 22 October 2026
+
+The existing Site now has a small Worker with an R2 `BUCKET` binding. Public exported assets are served from its `assets/` prefix; one private-write connection record backs the non-cacheable `/processor-config.json`. No extra Site, paid hosting account or financial-data rebuild is required. The registered address is public, but updates require the owner launcher credential. See CONNECTED_FRONTEND.md.
+
+Publication: open the existing Site source with the Sites helper, run `python src/build_public_demo.py`, then `python src/build_connection_site.py`, package/save/deploy that exact source, and run `python src/upload_site_assets.py` to upload the allowlisted public export. Run `Start BPI.cmd` to register a healthy processor. Preserve `.openai/hosting.json` identity and `r2: "BUCKET"`; do not restore `static` or overwrite the live registry with a generated config file. The export remains a staging directory, not a file server for the repository.

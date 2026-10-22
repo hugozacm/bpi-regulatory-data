@@ -28,6 +28,14 @@ function harness(status){
  assert.equal(offline.elements.get('#resume-status').hidden,false);
  const health=harness(200);vm.runInContext('jobActive=true;',health.context);await vm.runInContext('health()',health.context);
  assert.equal(health.elements.get('#build').disabled,true);
+ const discovery=harness(200);
+ discovery.context.localStorage={setItem(){}};discovery.context.sessionStorage={setItem(){}};
+ discovery.context.fetch=async url=>({ok:true,json:async()=>url==='processor-config.json'?{automatic_discovery:true,api_origin:'https://new.trycloudflare.com'}:{status:'ok',mode:'TEMPORARY_LOCAL_PILOT'}});
+ await vm.runInContext('health()',discovery.context);
+ assert.equal(vm.runInContext('origin',discovery.context),'https://new.trycloudflare.com');
+ vm.runInContext("origin='https://old.trycloudflare.com';transferBusy=true;",discovery.context);
+ await vm.runInContext('health()',discovery.context);
+ assert.equal(vm.runInContext('origin',discovery.context),'https://old.trycloudflare.com','Never switch during CSV transfer');
  const race=harness(200);let releasePreview;
  race.context.fetch=async url=>url.includes('/dataset')?await new Promise(resolve=>{releasePreview=()=>resolve({ok:true,json:async()=>({columns:['name'],rows:[]})});}):{ok:true,json:async()=>({id:'old',start:'20240331',end:'20240331',status:'COMPLETED_REVIEW_REQUIRED',result_ready:true,rows:1,columns:236})};
  const pending=vm.runInContext('watch()',race.context);

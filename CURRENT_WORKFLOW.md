@@ -30,3 +30,7 @@ See [CONNECTED_FRONTEND.md](CONNECTED_FRONTEND.md) for launch, reconnect, bounde
 Institution classification, domestic-versus-global root selection, missing detailed bank equivalents, source amendments and independent filing reconciliation require further work. Passing tests or accounting identities is not financial certification. Predecessors remain separate before official effective merger dates.
 
 Historical acquisition/staging tools are documented in [HISTORICAL_EXTENSION.md](HISTORICAL_EXTENSION.md). Their raw archives do not establish integrated analytical coverage.
+
+## Automatic reconnection — 22 October 2026
+
+Run `Start BPI.cmd` after restarting the laptop. The launcher privately registers its current temporary HTTPS origin at the existing Site. The browser reads the non-cacheable connection record on load and during health checks; no address copying or republication is required. The processor remains local and must stay awake. See CONNECTED_FRONTEND.md for the owner-only registration credential and setup limits. Dataset preparation and the 236-column output are unchanged.

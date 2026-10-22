@@ -37,7 +37,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe src/start_frontend_pilot.py
 ```
 
-Keep the processor and tunnel running. If the launcher prints a new HTTPS address, open **Methodology → Reconnect the temporary processor** on the Site. No republishing is required.
+After restarting the laptop, double-click **Start BPI.cmd** in this folder (or run the launcher above). It registers the current connection automatically; no link pasting or republishing is required on the configured laptop. Keep the processor, tunnel and computer running. This is not an automatic Windows startup service. See CONNECTED_FRONTEND.md for owner-key provisioning on a different computer.
 
 Direct build and exact-source replay:
 

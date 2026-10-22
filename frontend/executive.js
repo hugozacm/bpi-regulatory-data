@@ -9,7 +9,16 @@ function period(which){const y=Number($('#'+which+'-year').value),q=Number($('#'
 function range(){const start=period('from'),end=period('to');if(start>end)throw Error('Choose an end quarter on or after the start quarter.');if(start<'20230331'||end>'20260630')throw Error('Available pilot coverage is Q1 2023 through Q2 2026.');return{start,end};}
 function readable(q){return `Q${Math.ceil(Number(q.slice(4,6))/3)} ${q.slice(0,4)}`;}
 function status(text){$('#connection').textContent=text;$('#connection').classList.toggle('online',online);}
-async function health(){if(healthBusy)return;healthBusy=true;try{const h=await api('health');if(h.status!=='ok'||h.mode!=='TEMPORARY_LOCAL_PILOT')throw Error('Unexpected processor');online=true;status('Processor connected');}catch{online=false;status('Snapshot available · processor offline');}finally{healthBusy=false;$('#build').disabled=!online||jobActive||submitting||transferBusy;}}
+async function discover(){
+ if(transferBusy||submitting||pollBusy)return;
+ try{const cfg=await json('processor-config.json',{cache:'no-store'});
+  if(cfg.automatic_discovery&&/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(cfg.api_origin)&&cfg.api_origin!==origin){
+   origin=cfg.api_origin;localStorage.setItem('regdata-origin',origin);
+   if(job?.id)sessionStorage.setItem('regdata-job',JSON.stringify({id:job.id,origin}));
+  }
+ }catch{/* Keep the last known origin if discovery is temporarily unavailable. */}
+}
+async function health(discovery=true){if(healthBusy)return;healthBusy=true;try{if(discovery)await discover();const h=await api('health');if(h.status!=='ok'||h.mode!=='TEMPORARY_LOCAL_PILOT')throw Error('Unexpected processor');online=true;status('Processor connected');}catch{online=false;status('Snapshot available · processor offline');}finally{healthBusy=false;$('#build').disabled=!online||jobActive||submitting||transferBusy;}}
 function save(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),30000);}
 let transfer=null;
 async function download(kind,trigger){

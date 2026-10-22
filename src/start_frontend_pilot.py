@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 import requests
+from processor_discovery import register
 
 ROOT=Path(__file__).resolve().parents[1]
 URL='https://github.com/cloudflare/cloudflared/releases/download/2026.10.3/cloudflared-windows-amd64.exe'
@@ -41,6 +42,19 @@ def main():
             try:verify_local();break
             except requests.RequestException:time.sleep(.5)
         else:raise RuntimeError('Local processor did not start; inspect logs')
+    # Reuse a healthy existing connection rather than creating a tunnel per click.
+    for receipt in sorted(runtime.glob('connection-*.json'),reverse=True):
+        previous=json.loads(receipt.read_text(encoding='utf-8'))
+        origin=previous.get('api_origin','')
+        if not re.fullmatch(r'https://[a-z0-9-]+\.trycloudflare\.com',origin):continue
+        try:
+            response=requests.get(origin+'/pilot/health',timeout=3)
+            health=response.json()
+            if response.ok and health.get('status')=='ok' and health.get('mode')=='TEMPORARY_LOCAL_PILOT':
+                register(ROOT,origin)
+                print(json.dumps({'api_origin':origin,'automatic_discovery':True,'reused_connection':True,
+                    'note':'Website connected automatically. Keep the computer awake.'},indent=2));return
+        except (requests.RequestException,ValueError):pass
     suffix=str(time.time_ns())
     tunnel_log=runtime/('tunnel-'+suffix+'.log')
     with tunnel_log.open('wb') as handle:
@@ -53,9 +67,11 @@ def main():
             origin=urls[-1]
             try:
                 result=requests.get(origin+'/pilot/health',timeout=5)
-                if result.ok:
-                    info={**processes,'api_origin':origin,'note':'Computer and tunnel must stay running. Use Reconnect in the existing Site if the address changed.'}
+                health=result.json()
+                if result.ok and health.get('status')=='ok' and health.get('mode')=='TEMPORARY_LOCAL_PILOT':
+                    info={**processes,'api_origin':origin,'automatic_discovery':True,'note':'Website connects automatically. Keep the computer and tunnel running.'}
                     (runtime/('connection-'+suffix+'.json')).write_text(json.dumps(info,indent=2),encoding='utf-8')
+                    register(ROOT,origin)
                     print(json.dumps(info,indent=2));return
             except requests.RequestException:pass
         if tunnel.poll() is not None:break

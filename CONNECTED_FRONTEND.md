@@ -32,7 +32,13 @@ Refreshing restarts an incomplete transfer, but session storage restores the job
 
 The launcher verifies the pinned official Cloudflare executable hash, starts the processor if absent and creates a temporary tunnel. It prints owned process IDs and the HTTPS address. Keep the computer awake, connected, and both processes running. There is no startup service, paid hosting or uptime guarantee.
 
-After a tunnel restart, paste the new address under **Methodology → Reconnect the temporary processor**. Do not enter credentials. Stop only verified owned processes after confirming no build is active. Windows Python redirectors may create a serving child process.
+Double-click **Start BPI.cmd** in the project folder after restarting the laptop, or run the launcher above. It reuses a healthy tunnel or starts a new one, then registers its address privately with this same Site. The browser discovers it on opening and during its 30-second health checks. No link pasting or Site republication is needed. This is not an automatic Windows login task: the launcher must still be started, and the computer must remain awake. A download already in progress must finish or be retried before the browser changes address.
+
+The Site now uses a small Worker and its platform-managed R2 bucket to retain the existing public assets and one connection record. `GET /processor-config.json` is public and non-cacheable; it contains only the temporary origin and update time. `PUT /_processor/connection` requires the owner registration key and accepts only a strict HTTPS trycloudflare.com origin. The launcher verifies the restricted processor's health before registration; the browser independently checks live health. The Site does not proxy or fetch submitted addresses, or make the laptop always available. Manual reconnection remains an emergency fallback.
+
+Owner setup (already completed on this laptop): the ignored `outputs/pilot_runtime/discovery.key` is a narrow registration/public-asset publishing credential. Never share or commit it. Its SHA-256 verifier is a secret runtime setting named `PROCESSOR_REGISTRATION_SHA256` on this existing Site, not a browser secret or GitHub token. Moving to another computer requires securely provisioning that key, Python dependencies and source cache. If it is lost or exposed, replace the local key and the Site verifier together, then redeploy; do not put credentials in chat. This does not grant access to private project files.
+
+Stop only verified owned processes after confirming no build is active. Windows Python redirectors may create a serving child process.
 
 Logs: `outputs/pilot_runtime/`. Private job records/logs: `outputs/public_jobs/`. Do not expose a project-directory file server.
 
