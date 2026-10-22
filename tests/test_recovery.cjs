@@ -36,6 +36,30 @@ function harness(status){
  vm.runInContext("origin='https://old.trycloudflare.com';transferBusy=true;",discovery.context);
  await vm.runInContext('health()',discovery.context);
  assert.equal(vm.runInContext('origin',discovery.context),'https://old.trycloudflare.com','Never switch during CSV transfer');
+ const manual=harness(200),stored=new Map();
+ manual.context.localStorage={getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)};
+ manual.context.sessionStorage={setItem(){}};
+ manual.context.fetch=async url=>({ok:true,json:async()=>url==='processor-config.json'?{automatic_discovery:true,api_origin:'https://old.trycloudflare.com'}:{status:'ok',mode:'TEMPORARY_LOCAL_PILOT'}});
+ await vm.runInContext('health()',manual.context);
+ manual.context.document.querySelector('#endpoint').value='https://manual.trycloudflare.com';
+ await manual.context.document.querySelector('#reconnect').onclick();
+ assert.equal(vm.runInContext('origin',manual.context),'https://manual.trycloudflare.com');
+ await vm.runInContext('health()',manual.context);
+ assert.equal(vm.runInContext('origin',manual.context),'https://manual.trycloudflare.com','Periodic discovery respects manual override until registry changes');
+ const restore=harness(200),jobId='a'.repeat(32),requests=[];
+ const saved={id:jobId,origin:'https://old.trycloudflare.com'};
+ restore.context.localStorage={getItem:()=>null,setItem(){}};
+ restore.context.sessionStorage={getItem:()=>JSON.stringify(saved),setItem(){}};
+ restore.context.location={search:''};restore.context.setInterval=()=>0;restore.context.Option=function(){};
+ for(const id of ['from-q','to-q','from-year','to-year'])restore.context.document.querySelector('#'+id).add=()=>{};
+ restore.context.fetch=async url=>{requests.push(url);return{ok:true,json:async()=>
+  url==='processor-config.json'?{automatic_discovery:true,api_origin:'https://new.trycloudflare.com'}:
+  url.endsWith('/health')?{status:'ok',mode:'TEMPORARY_LOCAL_PILOT'}:
+  url.endsWith('/jobs/'+jobId)?{id:jobId,start:'20240331',end:'20240331',status:'COMPLETED_REVIEW_REQUIRED',result_ready:true,rows:1,columns:236}:
+  {columns:['name'],rows:[]}};};
+ await vm.runInContext(fs.readFileSync(require.resolve('../frontend/executive.js'),'utf8').slice(fs.readFileSync(require.resolve('../frontend/executive.js'),'utf8').indexOf('(async()=>')),restore.context);
+ assert.equal(vm.runInContext('job.id',restore.context),jobId);
+ assert(requests.includes('https://new.trycloudflare.com/pilot/jobs/'+jobId),'Restores existing job on new registered origin without a new build');
  const race=harness(200);let releasePreview;
  race.context.fetch=async url=>url.includes('/dataset')?await new Promise(resolve=>{releasePreview=()=>resolve({ok:true,json:async()=>({columns:['name'],rows:[]})});}):{ok:true,json:async()=>({id:'old',start:'20240331',end:'20240331',status:'COMPLETED_REVIEW_REQUIRED',result_ready:true,rows:1,columns:236})};
  const pending=vm.runInContext('watch()',race.context);

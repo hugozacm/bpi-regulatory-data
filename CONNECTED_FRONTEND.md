@@ -73,6 +73,14 @@ Partial jobs end as **COMPLETED_PARTIAL_REVIEW_REQUIRED**, with requested/delive
 
 The dictionary endpoint also builds a complete dictionary for older jobs from their original saved mapping and actual CSV header. New builds save output_dictionary.json. Large static snapshot downloads use a separate export path, not built-result resumable transfers.
 
+## Reliability fixes — 22 October 2026
+
+Manual reconnection tests exactly the address entered. Its override remains valid while the discovered registry address is unchanged; a later launcher registration of a different address restores automatic discovery. Completed jobs saved against an older tunnel can reopen on the currently verified registered processor, without submitting a duplicate build. A missing job still stops with an explicit error rather than inventing a result.
+
+Each public build now receives its own `outputs/dataset/job-JOB_ID` directory via `--output`. The worker reads only that job's report and verifies the requested range; an unrelated manual build report cannot be mistaken for its result. Normal CLI builds retain uniquely named directories, and explicit output paths must be new directories directly under outputs/dataset. The dictionary documents both current VALIDATED_RESEARCH_DRAFT and frozen MVP_V1_RESEARCH_DRAFT labels; neither means financial certification.
+
+Site releases are staged under content hashes and sealed only when all manifest assets exist with verified upload checksums. A saved Worker pins the release; there is no mutable live asset switch or partial overwrite. HTML, scripts, styles and frontend JSON reads use release-pinned URLs. Re-deploying the previous pinned Worker restores its asset version. Connection discovery remains separate and dynamic. See FRONTEND.md for the publication order.
+
 ## Verification
 
 21 October 2026 quality-policy replay: job `95852a83053440a2a82b1bdc4171fd75`

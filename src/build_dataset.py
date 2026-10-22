@@ -126,6 +126,7 @@ def main(argv=None):
     p.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
     p.add_argument('--start', default='20230331')
     p.add_argument('--end', default='20260630')
+    p.add_argument('--output', type=Path, help='Unique new run directory directly under outputs/dataset')
     p.add_argument('--offline', action='store_true')
     p.add_argument('--refresh', action='store_true')
     p.add_argument('--progress-file', type=Path, help='Local progress receipt for the bounded frontend worker')
@@ -153,7 +154,10 @@ def main(argv=None):
     fields = mapping['fields']
     if any(a.start < f['valid_from'] or a.end > f['valid_to'] for f in fields):
         p.error('Requested dates exceed verified mapping bounds; add period-specific mappings first')
-    out = root / 'outputs' / 'dataset' / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid4().hex[:8])
+    output_root=root/'outputs/dataset'
+    out=a.output.resolve() if a.output else output_root/(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid4().hex[:8])
+    if out.parent!=output_root:
+        p.error('Output must be a new directory directly under outputs/dataset')
     out.mkdir(parents=True, exist_ok=False)
     report = {'started_at_utc': utc_now(), 'requested_start': a.start, 'requested_end': a.end,
               'release_status': 'BLOCKED_REVIEW_REQUIRED', 'sources': [], 'source_errors': [],

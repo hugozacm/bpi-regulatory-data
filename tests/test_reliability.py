@@ -24,6 +24,8 @@ def test_full_dictionary_matches_all_236_output_columns():
     assert by_name['net_income_quarter']['measurement']=='quarterly_flow'
     assert by_name['bank_sum_DEP']['source_field']=='DEP'
     assert by_name['interest_loans_residential_ytd']['fdic_equivalent']==''
+    assert 'VALIDATED_RESEARCH_DRAFT' in by_name['release_status']['notes']
+    assert 'MVP_V1_RESEARCH_DRAFT' in by_name['release_status']['notes']
 
 
 def test_period_plan_never_invents_missing_quarter_or_prior_flow():
@@ -77,8 +79,11 @@ def test_public_worker_accepts_verified_partial_result(tmp_path,monkeypatch):
         returncode=2
         def poll(self):return self.returncode
     def spawn(*args,**kwargs):
-        out=tmp_path/'outputs/dataset/partial-test';out.mkdir(parents=True)
-        report={'processing_status':'PARTIAL','quality_policy':'CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1',
+        command=args[0]
+        out=Path(command[command.index('--output')+1]);out.mkdir(parents=True)
+        other=tmp_path/'outputs/dataset/unrelated-cli';other.mkdir()
+        (other/'release_report.json').write_text('{}')
+        report={'requested_start':'20240331','requested_end':'20240630','processing_status':'PARTIAL','quality_policy':'CAUTIOUS_FLOW_AND_COMPONENT_CHECKS_V1',
                 'source_errors':[{'filename':'missing'}],'period_coverage':[{'report_date':'20240331','status':'MISSING'}],
                 'missing_periods':['20240331'],'delivered_periods':['20240630'],'requested_periods':['20240331','20240630'],
                 'organisation_quarters':1,'failed_accounting_checks':0,'unresolved_ownership':0}
@@ -90,3 +95,11 @@ def test_public_worker_accepts_verified_partial_result(tmp_path,monkeypatch):
     assert result['status']=='COMPLETED_PARTIAL_REVIEW_REQUIRED' and result['result_ready']
     assert result['missing_periods']==['20240331']
     assert PublicJobs(tmp_path).get(record['id'])['status']=='COMPLETED_PARTIAL_REVIEW_REQUIRED'
+
+
+def test_explicit_output_rejects_paths_outside_dataset_directory(tmp_path):
+    (tmp_path/'config').mkdir()
+    (tmp_path/'config/expanded_measures.json').write_bytes((ROOT/'config/expanded_measures.json').read_bytes())
+    with pytest.raises(SystemExit):
+        builder.main(['--root',str(tmp_path),'--start','20240331','--end','20240331','--output',str(tmp_path/'wrong'),'--offline'])
+    assert not (tmp_path/'wrong').exists()

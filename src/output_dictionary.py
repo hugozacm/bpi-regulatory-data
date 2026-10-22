@@ -22,7 +22,7 @@ def build_dictionary(cols, dictionary):
         'bank_count': ('Ownership ledger', 'Number of assigned bank records; not proof of complete group membership'),
         'basis': ('Pipeline selection', 'CONSOLIDATED_Y9C or BANK_ONLY_AGGREGATE; independent candidates use the latter basis'),
         'name': ('RSSD9017 / NAMEHCR / NAME', 'May be absent when no verified root name is available'),
-        'release_status': ('MVP packaging', 'MVP_V1_RESEARCH_DRAFT; not financial certification'),
+        'release_status': ('Delivery quality policy', 'VALIDATED_RESEARCH_DRAFT for current on-demand builds; MVP_V1_RESEARCH_DRAFT for the frozen snapshot. Neither is financial certification.'),
         'coverage_note': ('Pipeline review', 'Reporting perimeter and classification limitations'),
         'nested_bank_overlap': ('Dated NIC graph', 'Nested reporting banks detected; aggregate bank values withheld'),
         'flow_perimeter_review': ('NIC control dates and transformations', 'Uncertain quarter flows withheld in MVP; reported YTD evidence retained'),

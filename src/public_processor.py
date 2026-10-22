@@ -76,11 +76,11 @@ class PublicJobs:
         child=None
         try:
             record.update(status='CHECKING_SOURCES',message='Checking saved files and acquiring missing sources');self.save(record)
-            before=set((self.root/'outputs/dataset').glob('*/release_report.json'))
+            output=self.root/'outputs/dataset'/('job-'+record['id'])
             progress=self.folder/(record['id']+'.progress.json')
             with (self.folder/(record['id']+'.log')).open('w',encoding='utf-8') as log:
                 child=subprocess.Popen([sys.executable,str(self.root/'src/build_dataset.py'),'--root',str(self.root),
-                                        '--start',record['start'],'--end',record['end'],'--progress-file',str(progress)],
+                                        '--start',record['start'],'--end',record['end'],'--progress-file',str(progress),'--output',str(output)],
                                        cwd=self.root,stdout=log,stderr=subprocess.STDOUT)
                 deadline=time.monotonic()+1800
                 while child.poll() is None:
@@ -94,9 +94,10 @@ class PublicJobs:
                         if receipt['stage']!='COMPLETED_REVIEW_REQUIRED':
                             record.update(status=receipt['stage'],message=receipt['message']);self.save(record)
                     time.sleep(.5)
-            reports=set((self.root/'outputs/dataset').glob('*/release_report.json'))-before
-            if len(reports)!=1: raise ValueError('Expected one build report')
-            report_path=reports.pop();report=json.loads(report_path.read_text(encoding='utf-8'))
+            report_path=output/'release_report.json'
+            report=json.loads(report_path.read_text(encoding='utf-8'))
+            if report.get('requested_start')!=record['start'] or report.get('requested_end')!=record['end']:
+                raise ValueError('Build report does not match this job')
             for key in ('requested_periods','delivered_periods','missing_periods','period_coverage'):
                 record[key]=report.get(key,[])
             partial=report.get('processing_status')=='PARTIAL' and bool(report.get('period_coverage')) and bool(report.get('quality_policy'))
